@@ -1,8 +1,21 @@
+const { ChainId, Fetcher, WETH, Route, Trade, TokenAmount, TradeType} = require('@uniswap/sdk');
+const { ethers } = require("ethers");
+
+var web3 = require('web3');
+
+const network = "homestead";
+const infuraProjectId = "https://mainnet.infura.io/v3/ae3a3878141d4d9e84d0bd5d7f7354e0";
+// const provider = new ethers.providers.InfuraProvider(network, infuraProjectId);
+
+const provider = ethers.getDefaultProvider(network, {
+    etherscan: infuraProjectId,
+});
 
 class Pair {
-    nameTokenFrom;
-    nameTokenTo;
+    nameToken0;
+    nameToken1;
     addressPair;
+    route;
     // reserv1
     // reserv2
 }
@@ -10,24 +23,30 @@ class Pair {
 class Token {
     name;
     pairIndexes;
-    constructor(_name){
+    pairData;
+    address;
+    constructor(_name, _address){
         this.name = _name;
         this.pairIndexes = [];
+        this.pairData = [];
+        this.address = _address;
     }
 }
 
 class Graph {
     tokens; // index => Token 
     nameTokens; // index => token name correlation
+    tokenData;
     
     constructor() {
         this.tokens = [];
         this.nameTokens = [];
+        this.tokenData = [];
     }
 
-    addToken(name){
+    addToken(name, address){
         if(this.nameTokens.indexOf(name) == -1){
-            this.tokens.push(new Token(name));
+            this.tokens.push(new Token(name, address));
             this.nameTokens.push(name);
         } else {
             // console.log("Token with name %s alredy exist", name);
@@ -116,8 +135,46 @@ class Graph {
         return returned;
     }
 
-    updatePrices() {
-        
+    async fetchAllData() {
+        const chainId = ChainId.MAINNET;
+        const myF = async () => {
+            for (let i = 0; i < this.tokens.length; i++) {
+                const element = this.tokens[i];
+                try {
+                    this.tokenData[i] = Fetcher.fetchTokenData(chainId, web3.toChecksumAddress(element.address, chainId), provider);
+                } catch (error) {
+                    console.log(error); 
+                }
+            }
+        }
+
+        myF()
+
+        for (let i = 0; i < this.tokens.length; i++) {
+            const element = this.tokens[i];
+            try {
+                console.log(await this.tokenData[i]);
+            } catch (error) {
+                console.log("error");
+            }
+            
+        }
+        // const chainId = ChainId.MAINNET;
+        // const dai = await Fetcher.fetchTokenData(chainId, "0x6b175474e89094c44da98b954eedeac495271d0f");
+        // //const weth = WETH[chainId];
+        // const weth = await Fetcher.fetchTokenData(chainId, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+        // const pair = await Fetcher.fetchPairData(dai,weth);
+        // const route = new Route([pair], weth);
+
+        // const trade = new Trade(route, new TokenAmount(weth, "100000000000000000"), TradeType.EXACT_INPUT);
+    }
+
+    printAllTokensInfo() {
+        for (let i = 0; i < this.tokens.length; i++) {
+            const element = this.tokens[i];
+            console.log("Symbol: " + element.name + ", address: " + element.address);
+            
+        }
     }
 
 }

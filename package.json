@@ -11,7 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "@uniswap/sdk": "^3.0.3",
+    "bignumber.js": "^9.0.1",
     "ethers": "^5.4.4",
-    "graph-data-structure": "^2.0.0"
+    "graph-data-structure": "^2.0.0",
+    "sushiswap-api": "^1.1.1",
+    "web3": "^1.5.2",
+    "window": "^4.2.7"
   }
 }
