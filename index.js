@@ -7,6 +7,14 @@ const { ethers } = require('ethers');
 const { infuraProjecSecure, network, infuraProjectId, privateKey } = require('./config');
 const { BigNumber } = require('bignumber.js');
 
+var util = require('util');
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
+var log_stdout = process.stdout;
+
+console.log = function(d) { //
+  log_file.write(util.format(d) + '\n');
+  log_stdout.write(util.format(d) + '\n');
+};
 
 //ABIs
 const IFactory = require('@uniswap/v2-core/build/IUniswapV2Factory.json')
@@ -120,6 +128,8 @@ function computeProfitMaximizing(uRusdt, uRweth, sRusdt, sRweth, blockNumber) {
     return x;
 }
 
+
+console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
         let uReserves, uReserve0, uReserve1, sReserves, sReserve0, sReserve1
