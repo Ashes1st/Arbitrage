@@ -1,3 +1,5 @@
 /node_modules/*
 config.js
 debug.log
+/files/Graph.js
+/files/Graph_.js

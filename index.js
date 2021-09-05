@@ -6,6 +6,7 @@ const Web3 = require('web3');
 const { ethers } = require('ethers');
 const { infuraProjecSecure, network, infuraProjectId, privateKey } = require('./config');
 const { BigNumber } = require('bignumber.js');
+const utils = require('./files/Utils');
 
 var util = require('util');
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
@@ -63,72 +64,6 @@ async function asyncsVar() {
 
 asyncsVar()
 
-function computeProfitMaximizing(uRusdt, uRweth, sRusdt, sRweth, blockNumber) {
-    var x = 0;
-    var a,b,c,d;
-    
-    if(dirUtoS){
-        var c = BigNumber(sRweth);
-        var d = BigNumber(sRusdt);
-        var a = BigNumber(uRweth);
-        var b = BigNumber(uRusdt);
-    } else {
-        var c = BigNumber(uRweth);
-        var d = BigNumber(uRusdt);
-        var a = BigNumber(sRweth);
-        var b = BigNumber(sRusdt);
-    }
-    
-    const partx1 = BigNumber(-10).times(BigNumber(2515).sqrt());
-    const partx2 = BigNumber(10).times(BigNumber(2515).sqrt());
-    // console.log(part1.toString());
-    const part2 = (a.times(b).times(c).times(d).times((b.plus(d)).pow(2))).sqrt();
-    // console.log(part2.toString())
-    const part3 = BigNumber(503).times(a).times(b).times(d);
-    // console.log(part3.toString());
-    const part4 = BigNumber(503).times(a).times(d.pow(2));
-    // console.log(part4.toString());
-    const part5 = BigNumber(503).times((b.plus(d)).pow(2));
-    // console.log(part5.toString());
-    
-    const x1 = ((partx1.times(part2)).minus(part3).minus(part4)).div(part5).toNumber();
-    const x2 = ((partx2.times(part2)).minus(part3).minus(part4)).div(part5).toNumber();
-
-    if((x1>0) || (x2>0)){
-        if(x1>0){
-            x = x1;
-        }else if (x2 > 0){
-            x = x2;
-        }
-    } else {
-        return 0;
-    }
-    
-    fee = x * 0.006;
-    let bProfit;
-
-    if(dirUtoS){
-        console.log("U->S");
-        // bProfit = b.minus((b.times(a)).div(a.plus(c).minus((c.times(d)).div(d.plus(BigNumber(x)))))).toNumber() -x
-        bProfit = c.minus(c.times(d).div(d.plus(b).minus(b.times(a.div((a.plus(BigNumber(x)))))))).toNumber()-x;
-    } else {
-        console.log("S->U");
-        // bProfit = d.minus(d.times(c).div(c.plus(a).minus(a.times(b).div(b.plus(BigNumber(x)))))).toNumber() -x
-        // bProfit = b.minus((b.times(a)).div(a.plus(c).minus((c.times(d)).div(d.plus(BigNumber(x)))))).toNumber() -x
-        // bProfit = c-c*d/(d+b-b*a/(a+x))-x;
-        bProfit = c.minus(c.times(d).div(d.plus(b).minus(b.times(a.div((a.plus(BigNumber(x)))))))).toNumber()-x;
-
-    }
-    
-    console.log(blockNumber);
-    console.log("UNISWAP: resUSDT " + uRweth + ", resWETH " + uRusdt + ", price WETH " + uRweth/uRusdt);
-    console.log("SUSHISWAP: resUSDT " + sRweth + ", resWETH " + sRusdt + ", price WETH " + sRweth/sRusdt);
-    console.log("We need " + x.toFixed(2) + " USDT for " + bProfit.toFixed(2) + "USDT black profit (" + (bProfit*100/x).toFixed(3) + "%), fee " + fee + " USDT, white profit " + (bProfit-fee) + " USDT, clear profit "+(bProfit*100/x-0.6).toFixed(3)+"%");
-    // console.log(res-fee);
-    return x;
-}
-
-
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
@@ -162,7 +97,7 @@ var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, r
         } else {
             dirUtoS = true;
         }
-        amountIn = computeProfitMaximizing(uReserve0,uReserve1,sReserve0,sReserve1, result.number);
+        amountIn = utils.computeProfitMaximizing(uReserve0,uReserve1,sReserve0,sReserve1, result.number, dirUtoS);
 
 
         return;
@@ -184,38 +119,3 @@ subscription.unsubscribe(function(error, success){
         console.log('Successfully unsubscribed!');
     }
 });
-
-// const fun = async () => {
-    
-//     // const dai = await Fetcher.fetchTokenData(chainId, tokenAddress);
-//     // console.log(dai);
-    
-//     let pairs = fs.readFileSync("./files/main_pairs.json", "utf-8");
-//     let parsedJson = JSON.parse(pairs);
-
-//     // console.log(parsedJson.slice(0, 20));
-
-//     for (let i = 0; i < parsedJson.length; i++) {
-//         const element = parsedJson[i];
-//         graph.addToken(element['token0']['symbol'], element['token0']['address']);
-//         graph.addToken(element['token1']['symbol'], element['token1']['address']);
-//         graph.addEdge(element['token0']['symbol'], element['token1']['symbol']);
-//         graph.addEdge(element['token1']['symbol'], element['token0']['symbol']);
-//     }
-
-//     graph.printAllTokensInfo();
-//     graph.fetchAllData();
-//     console.log(graph.adjacent('Wrapped Ether'));
-    
-//     console.log(graph.Tokens);
-//     console.log(graph.nameTokens);
-
-//     for (let i = 0; i < graph.nameTokens.length; i++) {
-//         const element = graph.nameTokens[i];
-//         console.log("For " + element + " we have " + graph.findAllPathFor(element) + " cycles.");
-//     }
-// }
-
-// fun();
-
-
