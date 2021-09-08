@@ -213,43 +213,65 @@ var Graph = /** @class */ (function () {
     };
     Graph.prototype.updateReserves = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, pair, reserves, e_5_1;
-            var e_5, _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var promiseReserves, _a, _b, pair, reserves, i, _c, _d, pair, _e, _f, _g, e_5_1;
+            var e_6, _h, e_5, _j;
+            return __generator(this, function (_k) {
+                switch (_k.label) {
                     case 0:
-                        _d.trys.push([0, 5, 6, 7]);
-                        _a = __values(this.usedPairsAddress.keys()), _b = _a.next();
-                        _d.label = 1;
-                    case 1:
-                        if (!!_b.done) return [3 /*break*/, 4];
-                        pair = _b.value;
-                        return [4 /*yield*/, network.getReservesPair(pair.address)];
-                    case 2:
-                        reserves = _d.sent();
-                        pair.setReserve(reserves.reserve0, reserves.reserve1);
-                        _d.label = 3;
-                    case 3:
-                        _b = _a.next();
-                        return [3 /*break*/, 1];
-                    case 4: return [3 /*break*/, 7];
-                    case 5:
-                        e_5_1 = _d.sent();
-                        e_5 = { error: e_5_1 };
-                        return [3 /*break*/, 7];
-                    case 6:
+                        promiseReserves = [];
                         try {
-                            if (_b && !_b.done && (_c = _a["return"])) _c.call(_a);
+                            for (_a = __values(this.usedPairsAddress.keys()), _b = _a.next(); !_b.done; _b = _a.next()) {
+                                pair = _b.value;
+                                reserves = network.getReservesPair(pair.address);
+                                promiseReserves.push(reserves);
+                            }
+                        }
+                        catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                        finally {
+                            try {
+                                if (_b && !_b.done && (_h = _a["return"])) _h.call(_a);
+                            }
+                            finally { if (e_6) throw e_6.error; }
+                        }
+                        i = 0;
+                        _k.label = 1;
+                    case 1:
+                        _k.trys.push([1, 7, 8, 9]);
+                        _c = __values(this.usedPairsAddress.keys()), _d = _c.next();
+                        _k.label = 2;
+                    case 2:
+                        if (!!_d.done) return [3 /*break*/, 6];
+                        pair = _d.value;
+                        _f = (_e = pair).setReserve;
+                        return [4 /*yield*/, promiseReserves[i]];
+                    case 3:
+                        _g = [(_k.sent()).reserve0];
+                        return [4 /*yield*/, promiseReserves[i]];
+                    case 4:
+                        _f.apply(_e, _g.concat([(_k.sent()).reserve1]));
+                        i++;
+                        _k.label = 5;
+                    case 5:
+                        _d = _c.next();
+                        return [3 /*break*/, 2];
+                    case 6: return [3 /*break*/, 9];
+                    case 7:
+                        e_5_1 = _k.sent();
+                        e_5 = { error: e_5_1 };
+                        return [3 /*break*/, 9];
+                    case 8:
+                        try {
+                            if (_d && !_d.done && (_j = _c["return"])) _j.call(_c);
                         }
                         finally { if (e_5) throw e_5.error; }
                         return [7 /*endfinally*/];
-                    case 7: return [2 /*return*/];
+                    case 9: return [2 /*return*/];
                 }
             });
         });
     };
     Graph.prototype.logInfo = function () {
-        var e_6, _a;
+        var e_7, _a;
         try {
             for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var _path = _c.value;
@@ -261,16 +283,16 @@ var Graph = /** @class */ (function () {
                 console.log('---------');
             }
         }
-        catch (e_6_1) { e_6 = { error: e_6_1 }; }
+        catch (e_7_1) { e_7 = { error: e_7_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
             }
-            finally { if (e_6) throw e_6.error; }
+            finally { if (e_7) throw e_7.error; }
         }
     };
     Graph.prototype.searchOpportunity = function () {
-        var e_7, _a;
+        var e_8, _a;
         try {
             for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var _path = _c.value;
@@ -345,12 +367,12 @@ var Graph = /** @class */ (function () {
                 (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path);
             }
         }
-        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+        catch (e_8_1) { e_8 = { error: e_8_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
             }
-            finally { if (e_7) throw e_7.error; }
+            finally { if (e_8) throw e_8.error; }
         }
     };
     Graph.prototype.fetchInfoFromJson = function (_json) {

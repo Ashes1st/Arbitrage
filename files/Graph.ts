@@ -162,10 +162,20 @@ class Graph {
     }
 
     async updateReserves(){
+        let promiseReserves: Promise<{
+            reserve0: string;
+            reserve1: string;
+        }>[] = [];
         for(let pair of this.usedPairsAddress.keys()){
-            let reserves = await network.getReservesPair(pair.address);
-            pair.setReserve(reserves.reserve0, reserves.reserve1);
+            let reserves = network.getReservesPair(pair.address);
+            promiseReserves.push(reserves);
         }
+        let i = 0;
+        for(let pair of this.usedPairsAddress.keys()){
+            pair.setReserve((await promiseReserves[i]).reserve0, (await promiseReserves[i]).reserve1);
+            i++;
+        }
+        
     }
     
     logInfo(){

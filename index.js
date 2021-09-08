@@ -23,6 +23,7 @@ graph.findAllPathFor("WETH", 2);
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
+        console.log("new block");
         // graph.logUsedPairs();
         graph.updateReserves().then(()=>{
             // graph.logInfo();
