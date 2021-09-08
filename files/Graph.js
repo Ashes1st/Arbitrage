@@ -50,18 +50,21 @@ exports.__esModule = true;
 exports.Graph = exports.Pair = exports.Token = void 0;
 var BN = require("bignumber.js");
 var Network_1 = require("./Network");
+var Utils_1 = require("./Utils");
 var network;
 var Pair = /** @class */ (function () {
     function Pair(_token0, _token1, _address) {
         this.token0 = _token0;
         this.token1 = _token1;
         this.address = _address;
-        this.reserve0 = new BN.BigNumber(0);
-        this.reserve1 = new BN.BigNumber(0);
+        this.reserve0 = "0";
+        this.reserve1 = "0";
     }
     Pair.prototype.setReserve = function (_reserve0, _reserve1) {
-        this.reserve0 = new BN.BigNumber(_reserve0);
-        this.reserve1 = new BN.BigNumber(_reserve1);
+        var fBN = BN.BigNumber.clone({ DECIMAL_PLACES: this.token0.decimal });
+        var sBN = BN.BigNumber.clone({ DECIMAL_PLACES: this.token1.decimal });
+        this.reserve0 = (new fBN(_reserve0).div((new fBN(10).pow(this.token0.decimal)))).toString();
+        this.reserve1 = (new sBN(_reserve1).div((new sBN(10).pow(this.token1.decimal)))).toString();
     };
     return Pair;
 }());
@@ -70,7 +73,6 @@ var Token = /** @class */ (function () {
     function Token(_name, _address) {
         this.name = _name;
         this.connectedPairs = new Map([]);
-        // this.pairData = [];
         this.address = _address;
     }
     Token.prototype.setDecimal = function (_decimal) {
@@ -87,7 +89,7 @@ var Graph = /** @class */ (function () {
         this.checked = [];
         this.nameStartDFSToken = "";
         this.allCount = 0;
-        this.path = [];
+        this.currentPath = [];
         network = new Network_1.Network(_web3);
         this.fetchInfoFromJson(_json);
     }
@@ -118,18 +120,18 @@ var Graph = /** @class */ (function () {
         try {
             for (var _c = __values(this.tokens.get(currentTokenName).connectedPairs.keys()), _d = _c.next(); !_d.done; _d = _c.next()) {
                 var nextTokenName = _d.value;
-                this.path.push(nextTokenName);
+                this.currentPath.push(nextTokenName);
                 if (nextTokenName == this.nameStartDFSToken) {
                     if (count == deep) {
-                        for (var i = 0; i < this.path.length - 1; i++) {
-                            if (!this.usedPairsAddress.has(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]))) {
-                                if (this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]) != undefined) {
-                                    this.usedPairsAddress.set(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]), true);
+                        for (var i = 0; i < this.currentPath.length - 1; i++) {
+                            if (!this.usedPairsAddress.has(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]))) {
+                                if (this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]) != undefined) {
+                                    this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]), true);
                                 }
                             }
                         }
                         try {
-                            for (var _e = (e_2 = void 0, __values(this.path.slice(1, 3))), _f = _e.next(); !_f.done; _f = _e.next()) {
+                            for (var _e = (e_2 = void 0, __values(this.currentPath.slice(1, 3))), _f = _e.next(); !_f.done; _f = _e.next()) {
                                 var element = _f.value;
                                 if (!this.usedNames.includes(element)) {
                                     this.usedNames.push(element);
@@ -144,17 +146,17 @@ var Graph = /** @class */ (function () {
                             finally { if (e_2) throw e_2.error; }
                         }
                         var _path = [];
-                        _path = _path.concat(this.path);
+                        _path = _path.concat(this.currentPath);
                         this.usedPathes.push(_path);
                         this.allCount++;
                     }
-                    this.path.pop();
+                    this.currentPath.pop();
                     continue;
                 }
                 if (!this.checked.includes(nextTokenName)) {
                     this.dfs(nextTokenName, count + 1, deep);
                 }
-                this.path.pop();
+                this.currentPath.pop();
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -171,15 +173,15 @@ var Graph = /** @class */ (function () {
         this.nameStartDFSToken = nameStartToken;
         var currentToken = this.tokens.get(nameStartToken);
         var countPathTokens = 0;
-        this.path.push(currentToken.name);
+        this.currentPath.push(currentToken.name);
         this.checked.push(currentToken.name);
         this.usedNames = [this.nameStartDFSToken];
         try {
             for (var _b = __values(currentToken.connectedPairs.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var tokenName = _c.value;
-                this.path.push(tokenName);
+                this.currentPath.push(tokenName);
                 this.dfs(tokenName, countPathTokens + 1, deep);
-                this.path.pop();
+                this.currentPath.pop();
             }
         }
         catch (e_3_1) { e_3 = { error: e_3_1 }; }
@@ -189,7 +191,7 @@ var Graph = /** @class */ (function () {
             }
             finally { if (e_3) throw e_3.error; }
         }
-        this.path.pop();
+        this.currentPath.pop();
         var returned = this.allCount;
         this.allCount = 0;
     };
@@ -225,8 +227,7 @@ var Graph = /** @class */ (function () {
                         return [4 /*yield*/, network.getReservesPair(pair.address)];
                     case 2:
                         reserves = _d.sent();
-                        pair.reserve0 = new BN.BigNumber(reserves.reserve0);
-                        pair.reserve1 = new BN.BigNumber(reserves.reserve1);
+                        pair.setReserve(reserves.reserve0, reserves.reserve1);
                         _d.label = 3;
                     case 3:
                         _b = _a.next();
@@ -247,13 +248,17 @@ var Graph = /** @class */ (function () {
             });
         });
     };
-    Graph.prototype.logUsedPairs = function () {
+    Graph.prototype.logInfo = function () {
         var e_6, _a;
         try {
-            for (var _b = __values(this.usedPairsAddress.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var key = _c.value;
-                console.log("Pair " + key.token0.name + " <=> " + key.token1.name);
-                console.log(key.address);
+            for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var _path = _c.value;
+                console.log(_path);
+                for (var i = 0; i < _path.length - 1; i++) {
+                    console.log(this.tokens.get(_path[i]).connectedPairs.get(_path[i + 1]).token0.name + " reserve: " + this.tokens.get(_path[i]).connectedPairs.get(_path[i + 1]).reserve0);
+                    console.log(this.tokens.get(_path[i]).connectedPairs.get(_path[i + 1]).token1.name + " reserve: " + this.tokens.get(_path[i]).connectedPairs.get(_path[i + 1]).reserve1);
+                }
+                console.log('---------');
             }
         }
         catch (e_6_1) { e_6 = { error: e_6_1 }; }
@@ -264,17 +269,80 @@ var Graph = /** @class */ (function () {
             finally { if (e_6) throw e_6.error; }
         }
     };
-    Graph.prototype.logInfo = function () {
+    Graph.prototype.searchOpportunity = function () {
         var e_7, _a;
         try {
             for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var path = _c.value;
-                console.log(path);
-                for (var i = 0; i < path.length - 1; i++) {
-                    console.log(this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).token0.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).reserve0);
-                    console.log(this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).token1.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).reserve1);
+                var _path = _c.value;
+                var a1;
+                var b1;
+                var b2;
+                var c2;
+                var c3;
+                var a3;
+                var p1;
+                var p2;
+                var p3;
+                p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
+                p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
+                p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
+                if (p1.token0.name == this.nameStartDFSToken) {
+                    a1 = p1.reserve0;
+                    b1 = p1.reserve1;
+                    if (p1.token1.name == p2.token0.name) {
+                        b2 = p2.reserve0;
+                        c2 = p2.reserve1;
+                        if (p2.token1.name == p3.token0.name) {
+                            c3 = p3.reserve0;
+                            a3 = p3.reserve1;
+                        }
+                        else {
+                            c3 = p3.reserve1;
+                            a3 = p3.reserve0;
+                        }
+                    }
+                    else {
+                        b2 = p2.reserve1;
+                        c2 = p2.reserve0;
+                        if (p2.token0.name == p3.token0.name) {
+                            c3 = p3.reserve0;
+                            a3 = p3.reserve1;
+                        }
+                        else {
+                            c3 = p3.reserve1;
+                            a3 = p3.reserve0;
+                        }
+                    }
                 }
-                console.log('---------');
+                else {
+                    a1 = p1.reserve1;
+                    b1 = p1.reserve0;
+                    if (p1.token0.name == p2.token1.name) {
+                        b2 = p2.reserve1;
+                        c2 = p2.reserve0;
+                        if (p2.token0.name == p3.token0.name) {
+                            c3 = p3.reserve0;
+                            a3 = p3.reserve1;
+                        }
+                        else {
+                            c3 = p3.reserve1;
+                            a3 = p3.reserve0;
+                        }
+                    }
+                    else {
+                        b2 = p2.reserve0;
+                        c2 = p2.reserve1;
+                        if (p2.token1.name == p3.token0.name) {
+                            c3 = p3.reserve0;
+                            a3 = p3.reserve1;
+                        }
+                        else {
+                            c3 = p3.reserve1;
+                            a3 = p3.reserve0;
+                        }
+                    }
+                }
+                (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path);
             }
         }
         catch (e_7_1) { e_7 = { error: e_7_1 }; }

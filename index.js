@@ -23,40 +23,11 @@ graph.findAllPathFor("WETH", 2);
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
-        console.log("NewBlock");
-        
         // graph.logUsedPairs();
         graph.updateReserves().then(()=>{
-            graph.logInfo();
+            // graph.logInfo();
+            graph.searchOpportunity();
         });
-        
-        // if(false){
-        //     let uReserves, uReserve0, uReserve1, sReserves, sReserve0, sReserve1
-        
-        //     eBN = BigNumber.clone({ DECIMAL_PLACES: 18 })
-        //     uBN = BigNumber.clone({ DECIMAL_PLACES: 6 })
-        //     //tokens reserves on uniswap
-        //     uReserves = await uPair0.methods.getReserves().call()
-        //     uReserve0 = eBN(uReserves[0]).div(eBN(eBN(10).pow(18))).toFixed(); //T0
-        //     uReserve1 = uBN(uReserves[1]).div(uBN(uBN(10).pow(6))).toFixed(); //T1
-        //     let uPrice = uReserve1/uReserve0;
-    
-        //     //tokens reserves on sushiswap
-        //     sReserves = await sPair.methods.getReserves().call()
-        //     sReserve0 = eBN(sReserves[0]).div(eBN(eBN(10).pow(18))).toFixed(); //T0
-        //     sReserve1 = uBN(sReserves[1]).div(uBN(uBN(10).pow(6))).toFixed();
-        //     let sPrice = sReserve1/sReserve0;
-    
-        //     var amountIn = 0;
-    
-        //     if(uPrice > sPrice){
-        //         dirUtoS = false;
-        //     } else {
-        //         dirUtoS = true;
-        //     }
-        //     amountIn = utils.computeProfitMaximizing(uReserve0,uReserve1,sReserve0,sReserve1, result.number, dirUtoS);
-    
-        // }
         
         return;
     }

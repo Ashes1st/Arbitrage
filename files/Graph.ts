@@ -2,6 +2,7 @@
 import * as BN from 'bignumber.js';
 import Web3 from 'web3';
 import { Network } from './Network';
+import { computeCircleProfitMaximization } from './Utils';
 
 let network: Network;
 
@@ -9,20 +10,22 @@ class Pair {
     address: string;
     token0: Token;
     token1: Token;
-    reserve0: BN.BigNumber;
-    reserve1: BN.BigNumber;
+    reserve0: string;
+    reserve1: string;
 
     constructor(_token0: Token, _token1: Token, _address: string) {
         this.token0 = _token0;
         this.token1 = _token1;
         this.address = _address;
-        this.reserve0 = new BN.BigNumber(0);
-        this.reserve1 = new BN.BigNumber(0);
+        this.reserve0 = "0";
+        this.reserve1 = "0";
     }
 
     setReserve(_reserve0: string, _reserve1: string){
-        this.reserve0 = new BN.BigNumber(_reserve0);
-        this.reserve1 = new BN.BigNumber(_reserve1);
+        let fBN = BN.BigNumber.clone({ DECIMAL_PLACES: this.token0.decimal })
+        let sBN = BN.BigNumber.clone({ DECIMAL_PLACES: this.token1.decimal })
+        this.reserve0 = (new fBN(_reserve0).div((new fBN(10).pow(this.token0.decimal)))).toString();
+        this.reserve1 = (new sBN(_reserve1).div((new sBN(10).pow(this.token1.decimal)))).toString();
     }
 }
 
@@ -30,13 +33,11 @@ class Token {
     name: string;
     symbol: string;
     connectedPairs: Map<string, Pair>;
-    // pairData: [];
     decimal: number;
     address: string;
     constructor(_name: string, _address: string){
         this.name = _name;
         this.connectedPairs = new Map([]);
-        // this.pairData = [];
         this.address = _address;
     }
 
@@ -54,7 +55,7 @@ class Graph {
         this.checked = [];
         this.nameStartDFSToken = ""
         this.allCount = 0;
-        this.path = [];
+        this.currentPath = [];
 
         network = new Network(_web3);
 
@@ -85,7 +86,7 @@ class Graph {
 
     nameStartDFSToken: string;
     allCount: number;
-    path: string[];
+    currentPath: string[];
     usedPathes: string[][] = [];
     checked: string[];
     usedNames: string[];
@@ -96,30 +97,30 @@ class Graph {
         this.checked.push(currentTokenName);
 
         for(let nextTokenName of this.tokens.get(currentTokenName).connectedPairs.keys()){
-            this.path.push(nextTokenName);
+            this.currentPath.push(nextTokenName);
             
             if(nextTokenName == this.nameStartDFSToken){
                 if(count == deep){
-                    for(var i = 0; i < this.path.length-1; i++){
-                        if(!this.usedPairsAddress.has(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]))){
-                            if(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]) != undefined){
-                                this.usedPairsAddress.set(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]), true);
+                    for(var i = 0; i < this.currentPath.length-1; i++){
+                        if(!this.usedPairsAddress.has(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]))){
+                            if(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]) != undefined){
+                                this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]), true);
                             }
                         }
                     }
-                    for(var element of this.path.slice(1, 3)){
+                    for(var element of this.currentPath.slice(1, 3)){
                         if(!this.usedNames.includes(element)){
                             this.usedNames.push(element);
                         }
                     }
 
                     let _path: string[] = [];
-                    _path = _path.concat(this.path);
+                    _path = _path.concat(this.currentPath);
                     this.usedPathes.push(_path);
                     
                     this.allCount++;
                 }
-                this.path.pop();
+                this.currentPath.pop();
                 continue;
             }
 
@@ -127,7 +128,7 @@ class Graph {
                 this.dfs(nextTokenName, count+1, deep);
             }
 
-            this.path.pop();
+            this.currentPath.pop();
         }
 
         this.checked.splice(this.checked.indexOf(currentTokenName), 1);
@@ -138,17 +139,17 @@ class Graph {
         
         var currentToken = this.tokens.get(nameStartToken);
         var countPathTokens = 0;
-        this.path.push(currentToken.name);
+        this.currentPath.push(currentToken.name);
         this.checked.push(currentToken.name);
 
         this.usedNames = [this.nameStartDFSToken];
 
         for(let tokenName of currentToken.connectedPairs.keys()){
-            this.path.push(tokenName);
+            this.currentPath.push(tokenName);
             this.dfs(tokenName, countPathTokens+1, deep);
-            this.path.pop();
+            this.currentPath.pop();
         }
-        this.path.pop();
+        this.currentPath.pop();
 
         let returned = this.allCount;
         this.allCount = 0;
@@ -163,24 +164,86 @@ class Graph {
     async updateReserves(){
         for(let pair of this.usedPairsAddress.keys()){
             let reserves = await network.getReservesPair(pair.address);
-            pair.reserve0 = new BN.BigNumber(reserves.reserve0);
-            pair.reserve1 = new BN.BigNumber(reserves.reserve1);
+            pair.setReserve(reserves.reserve0, reserves.reserve1);
         }
     }
-    logUsedPairs(){
-        for(let key of this.usedPairsAddress.keys()){
-            console.log("Pair " + key.token0.name + " <=> " + key.token1.name);
-            console.log(key.address);
-        }
-    }
+    
     logInfo(){
-        for(let path of this.usedPathes){
-            console.log(path);
-            for(var i = 0; i < path.length-1; i++){                
-                console.log(this.tokens.get(path[i]).connectedPairs.get(path[i+1]).token0.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i+1]).reserve0);
-                console.log(this.tokens.get(path[i]).connectedPairs.get(path[i+1]).token1.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i+1]).reserve1);
+        for(let _path of this.usedPathes){
+            console.log(_path);
+            for(var i = 0; i < _path.length-1; i++){                
+                console.log(this.tokens.get(_path[i]).connectedPairs.get(_path[i+1]).token0.name + " reserve: " + this.tokens.get(_path[i]).connectedPairs.get(_path[i+1]).reserve0);
+                console.log(this.tokens.get(_path[i]).connectedPairs.get(_path[i+1]).token1.name + " reserve: " + this.tokens.get(_path[i]).connectedPairs.get(_path[i+1]).reserve1);
             }
             console.log('---------');
+        }
+    }
+
+    searchOpportunity(){
+        for(let _path of this.usedPathes){
+            var a1: string;
+            var b1: string;
+            var b2: string;
+            var c2: string;
+            var c3: string;
+            var a3: string;
+            var p1: Pair;
+            var p2: Pair;
+            var p3: Pair;
+            p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
+            p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
+            p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
+
+            if(p1.token0.name == this.nameStartDFSToken){
+                a1 = p1.reserve0;
+                b1 = p1.reserve1;
+                if(p1.token1.name == p2.token0.name){
+                    b2 = p2.reserve0;
+                    c2 = p2.reserve1;
+                    if(p2.token1.name == p3.token0.name){
+                        c3 = p3.reserve0;
+                        a3 = p3.reserve1;
+                    } else {
+                        c3 = p3.reserve1;
+                        a3 = p3.reserve0;
+                    }
+                } else {
+                    b2 = p2.reserve1;
+                    c2 = p2.reserve0;
+                    if(p2.token0.name == p3.token0.name){
+                        c3 = p3.reserve0;
+                        a3 = p3.reserve1;
+                    } else {
+                        c3 = p3.reserve1;
+                        a3 = p3.reserve0;
+                    }
+                }
+            } else {
+                a1 = p1.reserve1;
+                b1 = p1.reserve0;
+                if(p1.token0.name == p2.token1.name){
+                    b2 = p2.reserve1;
+                    c2 = p2.reserve0;
+                    if(p2.token0.name == p3.token0.name){
+                        c3 = p3.reserve0;
+                        a3 = p3.reserve1;
+                    } else {
+                        c3 = p3.reserve1;
+                        a3 = p3.reserve0;
+                    }
+                } else {
+                    b2 = p2.reserve0;
+                    c2 = p2.reserve1;
+                    if(p2.token1.name == p3.token0.name){
+                        c3 = p3.reserve0;
+                        a3 = p3.reserve1;
+                    } else {
+                        c3 = p3.reserve1;
+                        a3 = p3.reserve0;
+                    }
+                }
+            }
+            computeCircleProfitMaximization(a1,b1,b2,c2,c3,a3, _path);
         }
     }
 

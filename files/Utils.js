@@ -1,7 +1,17 @@
 const { BigNumber } = require('bignumber.js');
+const fs = require('fs');
+var util = require('util');
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
+var log_stdout = process.stdout;
+
+console.log = function(d) { //
+  log_file.write(util.format(d) + '\n');
+  log_stdout.write(util.format(d) + '\n');
+};
+
 
 //a1>b1>b2>c2>c3>a3  a3-a1 = profit
-module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3) {
+module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3,path) {
     
     var a1 = BigNumber(_a1);
     var b1 = BigNumber(_b1);
@@ -10,16 +20,8 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     var c3 = BigNumber(_c3);
     var a3 = BigNumber(_a3);
 
-    // var a1 = BigNumber(10000);
-    // var b1 = BigNumber(1000000);
-    // var b2 = BigNumber(125000);
-    // var c2 = BigNumber(5000);
-    // var c3 = BigNumber(4000);
-    // var a3 = BigNumber(1250);
-
     //(0.00099108*(-1004.49*sqrt(a1*a3*b1*b2*c2*c3*(b1*c2+b1*c3+b2*c3)^2)-1009*a1*b1*b2*c2*c3-1009*a1*b1*b2*c3^2-1009*a1*b2^2*c3^2))/(b1*c2+b1*c3+b2*c3)^2;
-    // (0.00099108*(-1004.49*sqrt(10000*1250*1000000*125000*5000*4000*(1000000*5000+1000000*4000+125000*4000)^2)-1009*10000*1000000*125000*5000*4000-1009*10000*1000000*125000*4000^2-1009*10000*125000^2*4000^2))/(1000000*5000+1000000*4000+125000*4000)^2
-    
+ 
     var x;
    
     let x1 = (BigNumber(0.00099108).times(
@@ -101,9 +103,13 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     } else {
         return 0;
     }
-
-    let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0003)).times(x)));
-    console.log("Profit: " + profit.toString() + ", input: " + x.toString() + ", % profit: " + profit.times(BigNumber(100)).div(x).toString() + "%");
+    txFee = BigNumber("0.004158");
+    let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0003)).times(x))).minus(txFee);
+    
+    if(profit.isGreaterThan(BigNumber(0))){
+        console.log(path);
+        console.log("Profit: " + profit.toString() + ", input: " + x.toString() + ", % profit: " + profit.times(BigNumber(100)).div(x).toString() + "%");
+    }
 }
 
 
@@ -148,13 +154,9 @@ module.exports.computeProfitMaximizing = function (uRusdt, uRweth, sRusdt, sRwet
 
     if(dirUtoS){
         console.log("U->S");
-        // bProfit = b.minus((b.times(a)).div(a.plus(c).minus((c.times(d)).div(d.plus(BigNumber(x)))))).toNumber() -x
         bProfit = c.minus(c.times(d).div(d.plus(b).minus(b.times(a.div((a.plus(BigNumber(x)))))))).toNumber()-x;
     } else {
         console.log("S->U");
-        // bProfit = d.minus(d.times(c).div(c.plus(a).minus(a.times(b).div(b.plus(BigNumber(x)))))).toNumber() -x
-        // bProfit = b.minus((b.times(a)).div(a.plus(c).minus((c.times(d)).div(d.plus(BigNumber(x)))))).toNumber() -x
-        // bProfit = c-c*d/(d+b-b*a/(a+x))-x;
         bProfit = c.minus(c.times(d).div(d.plus(b).minus(b.times(a.div((a.plus(BigNumber(x)))))))).toNumber()-x;
 
     }
@@ -163,6 +165,5 @@ module.exports.computeProfitMaximizing = function (uRusdt, uRweth, sRusdt, sRwet
     console.log("UNISWAP: resUSDT " + uRweth + ", resWETH " + uRusdt + ", price WETH " + uRweth/uRusdt);
     console.log("SUSHISWAP: resUSDT " + sRweth + ", resWETH " + sRusdt + ", price WETH " + sRweth/sRusdt);
     console.log("We need " + x.toFixed(2) + " USDT for " + bProfit.toFixed(2) + "USDT black profit (" + (bProfit*100/x).toFixed(3) + "%), fee " + fee + " USDT, white profit " + (bProfit-fee) + " USDT, clear profit "+(bProfit*100/x-0.6).toFixed(3)+"%");
-    // console.log(res-fee);
     return x;
 }
