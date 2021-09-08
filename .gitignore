@@ -3,3 +3,5 @@ config.js
 debug.log
 /files/Graph.js
 /files/Graph_.js
+/files/test.js
+/files/Path.ts

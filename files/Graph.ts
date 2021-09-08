@@ -1,7 +1,9 @@
-import { ChainId, Fetcher, WETH, Route, Trade, TokenAmount, TradeType } from '@uniswap/sdk';
-import { stripZeros } from 'ethers/lib/utils';
-import * as fs from 'fs';
+
 import * as BN from 'bignumber.js';
+import Web3 from 'web3';
+import { Network } from './Network';
+
+let network: Network;
 
 class Pair {
     address: string;
@@ -14,6 +16,13 @@ class Pair {
         this.token0 = _token0;
         this.token1 = _token1;
         this.address = _address;
+        this.reserve0 = new BN.BigNumber(0);
+        this.reserve1 = new BN.BigNumber(0);
+    }
+
+    setReserve(_reserve0: string, _reserve1: string){
+        this.reserve0 = new BN.BigNumber(_reserve0);
+        this.reserve1 = new BN.BigNumber(_reserve1);
     }
 }
 
@@ -30,32 +39,46 @@ class Token {
         // this.pairData = [];
         this.address = _address;
     }
+
+    setDecimal(_decimal: number){
+        this.decimal = _decimal;
+    }
 }
 
 class Graph {
     tokens: Map<string, Token>;
     
-    constructor() {
+    constructor(_web3: Web3, _json: string) {
         this.tokens = new Map([]);
 
         this.checked = [];
         this.nameStartDFSToken = ""
         this.allCount = 0;
         this.path = [];
+
+        network = new Network(_web3);
+
+        this.fetchInfoFromJson(_json);
     }
 
-    addToken(name:string, address: string){
+    addToken(name:string, address: string, decimal: number){
         if(this.tokens.get(name) == undefined){
-            this.tokens.set(name, new Token(name, address))
+            let token = new Token(name, address);
+            token.setDecimal(decimal);
+            this.tokens.set(name, token);
         }
     }
 
     addEdge(nameTokenFrom: string, nameTokenTo: string, pairAddress: string){
-        if(this.tokens.has(nameTokenFrom) && this.tokens.has(nameTokenTo)){
-            if(!this.tokens.get(nameTokenTo).connectedPairs.has(nameTokenFrom)){
-                let pair = new Pair(this.tokens.get(nameTokenFrom), this.tokens.get(nameTokenTo), pairAddress);
-                this.tokens.get(nameTokenFrom).connectedPairs.set(nameTokenTo, pair);
-                this.tokens.get(nameTokenTo).connectedPairs.set(nameTokenFrom, pair);
+        if(pairAddress == undefined){
+            console.log(nameTokenFrom + " and " + nameTokenTo + "address pair undefined");
+        } else {
+            if(this.tokens.has(nameTokenFrom) && this.tokens.has(nameTokenTo)){
+                if(!this.tokens.get(nameTokenTo).connectedPairs.has(nameTokenFrom)){
+                    let pair = new Pair(this.tokens.get(nameTokenFrom), this.tokens.get(nameTokenTo), pairAddress);
+                    this.tokens.get(nameTokenFrom).connectedPairs.set(nameTokenTo, pair);
+                    this.tokens.get(nameTokenTo).connectedPairs.set(nameTokenFrom, pair);
+                }
             }
         }
     }
@@ -63,8 +86,10 @@ class Graph {
     nameStartDFSToken: string;
     allCount: number;
     path: string[];
+    usedPathes: string[][] = [];
     checked: string[];
     usedNames: string[];
+    usedPairsAddress: Map<Pair, boolean> = new Map([]);
 
     dfs(currentTokenName: string, count: number, deep: number){
         
@@ -75,12 +100,23 @@ class Graph {
             
             if(nextTokenName == this.nameStartDFSToken){
                 if(count == deep){
-                    console.log(this.path);
+                    for(var i = 0; i < this.path.length-1; i++){
+                        if(!this.usedPairsAddress.has(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]))){
+                            if(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]) != undefined){
+                                this.usedPairsAddress.set(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i+1]), true);
+                            }
+                        }
+                    }
                     for(var element of this.path.slice(1, 3)){
                         if(!this.usedNames.includes(element)){
                             this.usedNames.push(element);
                         }
                     }
+
+                    let _path: string[] = [];
+                    _path = _path.concat(this.path);
+                    this.usedPathes.push(_path);
+                    
                     this.allCount++;
                 }
                 this.path.pop();
@@ -112,47 +148,11 @@ class Graph {
             this.dfs(tokenName, countPathTokens+1, deep);
             this.path.pop();
         }
-        
-        console.log(this.allCount);
-        console.log(this.usedNames);
+        this.path.pop();
+
         let returned = this.allCount;
         this.allCount = 0;
-        return returned;
     }
-
-    // async fetchAllData() {
-    //     const chainId = ChainId.MAINNET;
-    //     const myF = async () => {
-    //         for (let i = 0; i < this.tokens.length; i++) {
-    //             const element = this.tokens[i];
-    //             try {
-    //                 this.tokenData[i] = Fetcher.fetchTokenData(chainId, element.address, provider);
-    //             } catch (error) {
-    //                 console.log(error); 
-    //             }
-    //         }
-    //     }
-
-    //     myF()
-
-    //     for (let i = 0; i < this.tokens.length; i++) {
-    //         const element = this.tokens[i];
-    //         try {
-    //             console.log(await this.tokenData[i]);
-    //         } catch (error) {
-    //             console.log("error");
-    //         }
-            
-    //     }
-    //     // const chainId = ChainId.MAINNET;
-    //     // const dai = await Fetcher.fetchTokenData(chainId, "0x6b175474e89094c44da98b954eedeac495271d0f");
-    //     // //const weth = WETH[chainId];
-    //     // const weth = await Fetcher.fetchTokenData(chainId, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-    //     // const pair = await Fetcher.fetchPairData(dai,weth);
-    //     // const route = new Route([pair], weth);
-
-    //     // const trade = new Trade(route, new TokenAmount(weth, "100000000000000000"), TradeType.EXACT_INPUT);
-    // }
 
     printAllTokensInfo() {
         for(let entry of this.tokens.values()){
@@ -160,38 +160,41 @@ class Graph {
         }
     }
 
-}
-
-var graph = new Graph();
-
-const fun = async () => {
-    
-    // const dai = await Fetcher.fetchTokenData(chainId, tokenAddress);
-    // console.log(dai);
-    
-    let pairs = fs.readFileSync("main_pairs.json", "utf-8");
-    let parsedJson = JSON.parse(pairs);
-
-    // console.log(parsedJson.slice(0, 20));
-    
-    for (let i = 0; i < parsedJson.length; i++) {
-        const element = parsedJson[i];
-        graph.addToken(element['token0']['symbol'], element['token0']['address']);
-        graph.addToken(element['token1']['symbol'], element['token1']['address']);
-        graph.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+    async updateReserves(){
+        for(let pair of this.usedPairsAddress.keys()){
+            let reserves = await network.getReservesPair(pair.address);
+            pair.reserve0 = new BN.BigNumber(reserves.reserve0);
+            pair.reserve1 = new BN.BigNumber(reserves.reserve1);
+        }
     }
-    
+    logUsedPairs(){
+        for(let key of this.usedPairsAddress.keys()){
+            console.log("Pair " + key.token0.name + " <=> " + key.token1.name);
+            console.log(key.address);
+        }
+    }
+    logInfo(){
+        for(let path of this.usedPathes){
+            console.log(path);
+            for(var i = 0; i < path.length-1; i++){                
+                console.log(this.tokens.get(path[i]).connectedPairs.get(path[i+1]).token0.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i+1]).reserve0);
+                console.log(this.tokens.get(path[i]).connectedPairs.get(path[i+1]).token1.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i+1]).reserve1);
+            }
+            console.log('---------');
+        }
+    }
 
-    // graph.printAllTokensInfo();
-    // graph.fetchAllData();
-    
-    console.log(parsedJson.length + " - json length");
-    console.log(graph.findAllPathFor("WETH", 2));
+    private fetchInfoFromJson(_json: string) {
+        let parsedJson = JSON.parse(_json);
 
-    // for (let i = 0; i < graph.nameTokens.length; i++) {
-    //     const element = graph.nameTokens[i];
-    //     console.log("For " + element + " we have " + graph.findAllPathFor(element) + " cycles.");
-    // }
+        
+        for (let i = 0; i < parsedJson.length; i++) {
+            const element = parsedJson[i];
+            this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
+            this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
+            this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+        }
+    }
 }
 
-fun();
+export { Token, Pair, Graph };

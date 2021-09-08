@@ -47,15 +47,25 @@ var __values = (this && this.__values) || function(o) {
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
 exports.__esModule = true;
-var fs = require("fs");
+exports.Graph = exports.Pair = exports.Token = void 0;
+var BN = require("bignumber.js");
+var Network_1 = require("./Network");
+var network;
 var Pair = /** @class */ (function () {
     function Pair(_token0, _token1, _address) {
         this.token0 = _token0;
         this.token1 = _token1;
         this.address = _address;
+        this.reserve0 = new BN.BigNumber(0);
+        this.reserve1 = new BN.BigNumber(0);
     }
+    Pair.prototype.setReserve = function (_reserve0, _reserve1) {
+        this.reserve0 = new BN.BigNumber(_reserve0);
+        this.reserve1 = new BN.BigNumber(_reserve1);
+    };
     return Pair;
 }());
+exports.Pair = Pair;
 var Token = /** @class */ (function () {
     function Token(_name, _address) {
         this.name = _name;
@@ -63,27 +73,42 @@ var Token = /** @class */ (function () {
         // this.pairData = [];
         this.address = _address;
     }
+    Token.prototype.setDecimal = function (_decimal) {
+        this.decimal = _decimal;
+    };
     return Token;
 }());
+exports.Token = Token;
 var Graph = /** @class */ (function () {
-    function Graph() {
+    function Graph(_web3, _json) {
+        this.usedPathes = [];
+        this.usedPairsAddress = new Map([]);
         this.tokens = new Map([]);
         this.checked = [];
         this.nameStartDFSToken = "";
         this.allCount = 0;
         this.path = [];
+        network = new Network_1.Network(_web3);
+        this.fetchInfoFromJson(_json);
     }
-    Graph.prototype.addToken = function (name, address) {
+    Graph.prototype.addToken = function (name, address, decimal) {
         if (this.tokens.get(name) == undefined) {
-            this.tokens.set(name, new Token(name, address));
+            var token = new Token(name, address);
+            token.setDecimal(decimal);
+            this.tokens.set(name, token);
         }
     };
     Graph.prototype.addEdge = function (nameTokenFrom, nameTokenTo, pairAddress) {
-        if (this.tokens.has(nameTokenFrom) && this.tokens.has(nameTokenTo)) {
-            if (!this.tokens.get(nameTokenTo).connectedPairs.has(nameTokenFrom)) {
-                var pair = new Pair(this.tokens.get(nameTokenFrom), this.tokens.get(nameTokenTo), pairAddress);
-                this.tokens.get(nameTokenFrom).connectedPairs.set(nameTokenTo, pair);
-                this.tokens.get(nameTokenTo).connectedPairs.set(nameTokenFrom, pair);
+        if (pairAddress == undefined) {
+            console.log(nameTokenFrom + " and " + nameTokenTo + "address pair undefined");
+        }
+        else {
+            if (this.tokens.has(nameTokenFrom) && this.tokens.has(nameTokenTo)) {
+                if (!this.tokens.get(nameTokenTo).connectedPairs.has(nameTokenFrom)) {
+                    var pair = new Pair(this.tokens.get(nameTokenFrom), this.tokens.get(nameTokenTo), pairAddress);
+                    this.tokens.get(nameTokenFrom).connectedPairs.set(nameTokenTo, pair);
+                    this.tokens.get(nameTokenTo).connectedPairs.set(nameTokenFrom, pair);
+                }
             }
         }
     };
@@ -96,7 +121,13 @@ var Graph = /** @class */ (function () {
                 this.path.push(nextTokenName);
                 if (nextTokenName == this.nameStartDFSToken) {
                     if (count == deep) {
-                        console.log(this.path);
+                        for (var i = 0; i < this.path.length - 1; i++) {
+                            if (!this.usedPairsAddress.has(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]))) {
+                                if (this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]) != undefined) {
+                                    this.usedPairsAddress.set(this.tokens.get(this.path[i]).connectedPairs.get(this.path[i + 1]), true);
+                                }
+                            }
+                        }
                         try {
                             for (var _e = (e_2 = void 0, __values(this.path.slice(1, 3))), _f = _e.next(); !_f.done; _f = _e.next()) {
                                 var element = _f.value;
@@ -112,6 +143,9 @@ var Graph = /** @class */ (function () {
                             }
                             finally { if (e_2) throw e_2.error; }
                         }
+                        var _path = [];
+                        _path = _path.concat(this.path);
+                        this.usedPathes.push(_path);
                         this.allCount++;
                     }
                     this.path.pop();
@@ -155,41 +189,10 @@ var Graph = /** @class */ (function () {
             }
             finally { if (e_3) throw e_3.error; }
         }
-        console.log(this.allCount);
-        console.log(this.usedNames);
+        this.path.pop();
         var returned = this.allCount;
         this.allCount = 0;
-        return returned;
     };
-    // async fetchAllData() {
-    //     const chainId = ChainId.MAINNET;
-    //     const myF = async () => {
-    //         for (let i = 0; i < this.tokens.length; i++) {
-    //             const element = this.tokens[i];
-    //             try {
-    //                 this.tokenData[i] = Fetcher.fetchTokenData(chainId, element.address, provider);
-    //             } catch (error) {
-    //                 console.log(error); 
-    //             }
-    //         }
-    //     }
-    //     myF()
-    //     for (let i = 0; i < this.tokens.length; i++) {
-    //         const element = this.tokens[i];
-    //         try {
-    //             console.log(await this.tokenData[i]);
-    //         } catch (error) {
-    //             console.log("error");
-    //         }
-    //     }
-    //     // const chainId = ChainId.MAINNET;
-    //     // const dai = await Fetcher.fetchTokenData(chainId, "0x6b175474e89094c44da98b954eedeac495271d0f");
-    //     // //const weth = WETH[chainId];
-    //     // const weth = await Fetcher.fetchTokenData(chainId, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-    //     // const pair = await Fetcher.fetchPairData(dai,weth);
-    //     // const route = new Route([pair], weth);
-    //     // const trade = new Trade(route, new TokenAmount(weth, "100000000000000000"), TradeType.EXACT_INPUT);
-    // }
     Graph.prototype.printAllTokensInfo = function () {
         var e_4, _a;
         try {
@@ -206,26 +209,91 @@ var Graph = /** @class */ (function () {
             finally { if (e_4) throw e_4.error; }
         }
     };
+    Graph.prototype.updateReserves = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, _b, pair, reserves, e_5_1;
+            var e_5, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        _d.trys.push([0, 5, 6, 7]);
+                        _a = __values(this.usedPairsAddress.keys()), _b = _a.next();
+                        _d.label = 1;
+                    case 1:
+                        if (!!_b.done) return [3 /*break*/, 4];
+                        pair = _b.value;
+                        return [4 /*yield*/, network.getReservesPair(pair.address)];
+                    case 2:
+                        reserves = _d.sent();
+                        pair.reserve0 = new BN.BigNumber(reserves.reserve0);
+                        pair.reserve1 = new BN.BigNumber(reserves.reserve1);
+                        _d.label = 3;
+                    case 3:
+                        _b = _a.next();
+                        return [3 /*break*/, 1];
+                    case 4: return [3 /*break*/, 7];
+                    case 5:
+                        e_5_1 = _d.sent();
+                        e_5 = { error: e_5_1 };
+                        return [3 /*break*/, 7];
+                    case 6:
+                        try {
+                            if (_b && !_b.done && (_c = _a["return"])) _c.call(_a);
+                        }
+                        finally { if (e_5) throw e_5.error; }
+                        return [7 /*endfinally*/];
+                    case 7: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Graph.prototype.logUsedPairs = function () {
+        var e_6, _a;
+        try {
+            for (var _b = __values(this.usedPairsAddress.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var key = _c.value;
+                console.log("Pair " + key.token0.name + " <=> " + key.token1.name);
+                console.log(key.address);
+            }
+        }
+        catch (e_6_1) { e_6 = { error: e_6_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_6) throw e_6.error; }
+        }
+    };
+    Graph.prototype.logInfo = function () {
+        var e_7, _a;
+        try {
+            for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var path = _c.value;
+                console.log(path);
+                for (var i = 0; i < path.length - 1; i++) {
+                    console.log(this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).token0.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).reserve0);
+                    console.log(this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).token1.name + " reserve: " + this.tokens.get(path[i]).connectedPairs.get(path[i + 1]).reserve1);
+                }
+                console.log('---------');
+            }
+        }
+        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_7) throw e_7.error; }
+        }
+    };
+    Graph.prototype.fetchInfoFromJson = function (_json) {
+        var parsedJson = JSON.parse(_json);
+        for (var i = 0; i < parsedJson.length; i++) {
+            var element = parsedJson[i];
+            this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
+            this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
+            this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+        }
+    };
     return Graph;
 }());
-var graph = new Graph();
-var fun = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var pairs, parsedJson, i, element;
-    return __generator(this, function (_a) {
-        pairs = fs.readFileSync("main_pairs.json", "utf-8");
-        parsedJson = JSON.parse(pairs);
-        // console.log(parsedJson.slice(0, 20));
-        for (i = 0; i < parsedJson.length; i++) {
-            element = parsedJson[i];
-            graph.addToken(element['token0']['symbol'], element['token0']['address']);
-            graph.addToken(element['token1']['symbol'], element['token1']['address']);
-            graph.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
-        }
-        // graph.printAllTokensInfo();
-        // graph.fetchAllData();
-        console.log(parsedJson.length + " - json length");
-        console.log(graph.findAllPathFor("WETH", 2));
-        return [2 /*return*/];
-    });
-}); };
-fun();
+exports.Graph = Graph;
