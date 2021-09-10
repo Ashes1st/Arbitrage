@@ -2,7 +2,7 @@
 import * as BN from 'bignumber.js';
 import Web3 from 'web3';
 import { Network } from './Network';
-import { computeCircleProfitMaximization } from './Utils';
+import { computeCircleProfitMaximization, getTxFee } from './Utils';
 
 let network: Network;
 
@@ -39,6 +39,7 @@ class Token {
         this.name = _name;
         this.connectedPairs = new Map([]);
         this.address = _address;
+        this.symbol = _name;
     }
 
     setDecimal(_decimal: number){
@@ -88,9 +89,9 @@ class Graph {
     allCount: number;
     currentPath: string[];
     usedPathes: string[][] = [];
-    checked: string[];
-    usedNames: string[];
-    usedPairsAddress: Map<Pair, boolean> = new Map([]);
+    checked: string[] = [];
+    usedNames: string[] = [];
+    usedPairsAddress: Map<Pair, string> = new Map([]);
 
     dfs(currentTokenName: string, count: number, deep: number){
         
@@ -104,7 +105,7 @@ class Graph {
                     for(var i = 0; i < this.currentPath.length-1; i++){
                         if(!this.usedPairsAddress.has(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]))){
                             if(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]) != undefined){
-                                this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]), true);
+                                this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]), this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i+1]).address);
                             }
                         }
                     }
@@ -142,17 +143,17 @@ class Graph {
         this.currentPath.push(currentToken.name);
         this.checked.push(currentToken.name);
 
-        this.usedNames = [this.nameStartDFSToken];
+        this.usedNames.push(this.nameStartDFSToken);
 
         for(let tokenName of currentToken.connectedPairs.keys()){
             this.currentPath.push(tokenName);
             this.dfs(tokenName, countPathTokens+1, deep);
             this.currentPath.pop();
         }
-        this.currentPath.pop();
 
-        let returned = this.allCount;
-        this.allCount = 0;
+        this.checked.splice(this.checked.indexOf(nameStartToken), 1);
+        this.checked.pop();
+        this.currentPath.pop();
     }
 
     printAllTokensInfo() {
@@ -162,20 +163,18 @@ class Graph {
     }
 
     async updateReserves(){
-        let promiseReserves: Promise<{
-            reserve0: string;
-            reserve1: string;
-        }>[] = [];
-        for(let pair of this.usedPairsAddress.keys()){
-            let reserves = network.getReservesPair(pair.address);
-            promiseReserves.push(reserves);
+        let promiseReserves: string[][];
+        var addresses: string[] = [];
+        for(let address of this.usedPairsAddress.values()){
+            addresses.push(address);
         }
+        promiseReserves = await network.getReservesPairs(addresses);
         let i = 0;
-        for(let pair of this.usedPairsAddress.keys()){
-            pair.setReserve((await promiseReserves[i]).reserve0, (await promiseReserves[i]).reserve1);
+        for(let address of this.usedPairsAddress.keys()){
+            address.setReserve(promiseReserves[i][0],promiseReserves[i][1]);
             i++;
         }
-        
+
     }
     
     logInfo(){
@@ -187,6 +186,26 @@ class Graph {
             }
             console.log('---------');
         }
+    }
+
+    getTxFeeForSymbol(symbol: string){
+        let txFeeInEth = 0.004158;
+        if(symbol == "WETH"){
+            return 0.004158;
+        }
+        let pair = this.tokens.get("WETH").connectedPairs.get(symbol)
+        if(pair != undefined){
+            if(pair.token0.symbol == "WETH"){
+                let wethRes = pair.reserve0;  
+                let coinRes = pair.reserve1;
+                return getTxFee(wethRes,coinRes);
+            } else {
+                let wethRes = pair.reserve1;
+                let coinRes = pair.reserve0;
+                return getTxFee(wethRes,coinRes);
+            }
+        }
+        return "999999999999999999999999999999999999999999999999";
     }
 
     searchOpportunity(){
@@ -203,8 +222,7 @@ class Graph {
             p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
             p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
             p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
-
-            if(p1.token0.name == this.nameStartDFSToken){
+            if(p1.token0.name == _path[0]){
                 a1 = p1.reserve0;
                 b1 = p1.reserve1;
                 if(p1.token1.name == p2.token0.name){
@@ -253,8 +271,26 @@ class Graph {
                     }
                 }
             }
-            computeCircleProfitMaximization(a1,b1,b2,c2,c3,a3, _path);
+            
+            computeCircleProfitMaximization(a1,b1,b2,c2,c3,a3, _path, this.getTxFeeForSymbol(_path[0]));
         }
+    }
+
+    getAllSymbols(): string[] {
+        var allSymbols: string[] = []
+        for(let token of this.tokens.keys()){
+            allSymbols.push(token);
+        }
+        return allSymbols;
+    }
+
+    findAllPathes(deep: number){
+        let allSymbols = this.getAllSymbols();
+
+        for(let symbol of allSymbols){
+            this.findAllPathFor(symbol, deep);
+        }
+        console.log(this.allCount + " pathes finded");
     }
 
     private fetchInfoFromJson(_json: string) {
@@ -266,6 +302,14 @@ class Graph {
             this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
             this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
             this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+        }
+        console.log("Pairs data is loaded");
+    }
+
+    logUsedPasses(){
+        for(let path of this.usedPathes){
+            console.log(path[0] + " tx: " + this.getTxFeeForSymbol(path[0]));
+            
         }
     }
 }

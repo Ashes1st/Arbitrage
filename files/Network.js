@@ -37,19 +37,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 exports.Network = void 0;
-var _a = require('../config'), infuraProjecSecure = _a.infuraProjecSecure, network = _a.network, infuraProjectId = _a.infuraProjectId, privateKey = _a.privateKey;
 //ABIs
 var IFactory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
 var IPair = require("@uniswap/v2-core/build/IUniswapV2Pair.json");
 var IRouter = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
+var IFlashBotUniswapQuery = require("./ABI/FlashSwapQueryContractABI.json");
 var addrUFactory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 var addrURouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+var addrFlashBotUniswapQuery = "0xf522b378273394Bea84a31Db3D627c9a6fd522F0";
 var Network = /** @class */ (function () {
     function Network(_web3) {
         this.contractsPair = new Map([]);
         this.web3 = _web3;
         this.uFactory = new this.web3.eth.Contract(IFactory.abi, addrUFactory);
         this.uRouter = new this.web3.eth.Contract(IRouter.abi, addrURouter);
+        this.flashBotUniswapContract = new this.web3.eth.Contract(IFlashBotUniswapQuery, addrFlashBotUniswapQuery);
     }
     Network.prototype.getReservesPair = function (pairAddress) {
         return __awaiter(this, void 0, void 0, function () {
@@ -69,6 +71,20 @@ var Network = /** @class */ (function () {
                         _reserve0 = reserves[0];
                         _reserve1 = reserves[1];
                         return [2 /*return*/, { reserve0: _reserve0, reserve1: _reserve1 }];
+                }
+            });
+        });
+    };
+    Network.prototype.getReservesPairs = function (addressesPairs) {
+        return __awaiter(this, void 0, void 0, function () {
+            var reserves;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.flashBotUniswapContract.methods.getReservesByPairs(addressesPairs).call()];
+                    case 1:
+                        reserves = _a.sent();
+                        // console.log(reserves);
+                        return [2 /*return*/, reserves];
                 }
             });
         });

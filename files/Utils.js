@@ -1,6 +1,7 @@
 const { BigNumber } = require('bignumber.js');
 const fs = require('fs');
 var util = require('util');
+
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
 var log_stdout = process.stdout;
 
@@ -9,10 +10,18 @@ console.log = function(d) { //
   log_stdout.write(util.format(d) + '\n');
 };
 
+module.exports.getTxFee = function (res0, res1) {
+    let txFee = BigNumber("0.004158");
+    let wethRes = BigNumber(res0);
+    let coinRes = BigNumber(res1);
+
+    return txFee.times(coinRes.div(wethRes)).toString();
+}
 
 //a1>b1>b2>c2>c3>a3  a3-a1 = profit
-module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3,path) {
+module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3,path, _txFee) {
     
+    let txFee = BigNumber(_txFee);
     var a1 = BigNumber(_a1);
     var b1 = BigNumber(_b1);
     var b2 = BigNumber(_b2);
@@ -103,12 +112,14 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     } else {
         return 0;
     }
-    txFee = BigNumber("0.004158");
     let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0003)).times(x))).minus(txFee);
     
     if(profit.isGreaterThan(BigNumber(0))){
         console.log(path);
-        console.log("Profit: " + profit.toString() + ", input: " + x.toString() + ", % profit: " + profit.times(BigNumber(100)).div(x).toString() + "%");
+        console.log("Profit: " + profit.toString() + " " + path[0] + 
+                    ", input: " + x.toString() + " " + path[0] + 
+                    ", % profit: " + profit.times(BigNumber(100)).div(x).toString() + "%" + 
+                    ", txFee: " + txFee.toString() + " " + path[0]);
     }
 }
 

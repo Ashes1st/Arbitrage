@@ -74,6 +74,7 @@ var Token = /** @class */ (function () {
         this.name = _name;
         this.connectedPairs = new Map([]);
         this.address = _address;
+        this.symbol = _name;
     }
     Token.prototype.setDecimal = function (_decimal) {
         this.decimal = _decimal;
@@ -84,6 +85,8 @@ exports.Token = Token;
 var Graph = /** @class */ (function () {
     function Graph(_web3, _json) {
         this.usedPathes = [];
+        this.checked = [];
+        this.usedNames = [];
         this.usedPairsAddress = new Map([]);
         this.tokens = new Map([]);
         this.checked = [];
@@ -126,7 +129,7 @@ var Graph = /** @class */ (function () {
                         for (var i = 0; i < this.currentPath.length - 1; i++) {
                             if (!this.usedPairsAddress.has(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]))) {
                                 if (this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]) != undefined) {
-                                    this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]), true);
+                                    this.usedPairsAddress.set(this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]), this.tokens.get(this.currentPath[i]).connectedPairs.get(this.currentPath[i + 1]).address);
                                 }
                             }
                         }
@@ -175,7 +178,7 @@ var Graph = /** @class */ (function () {
         var countPathTokens = 0;
         this.currentPath.push(currentToken.name);
         this.checked.push(currentToken.name);
-        this.usedNames = [this.nameStartDFSToken];
+        this.usedNames.push(this.nameStartDFSToken);
         try {
             for (var _b = __values(currentToken.connectedPairs.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var tokenName = _c.value;
@@ -191,9 +194,9 @@ var Graph = /** @class */ (function () {
             }
             finally { if (e_3) throw e_3.error; }
         }
+        this.checked.splice(this.checked.indexOf(nameStartToken), 1);
+        this.checked.pop();
         this.currentPath.pop();
-        var returned = this.allCount;
-        this.allCount = 0;
     };
     Graph.prototype.printAllTokensInfo = function () {
         var e_4, _a;
@@ -213,59 +216,44 @@ var Graph = /** @class */ (function () {
     };
     Graph.prototype.updateReserves = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var promiseReserves, _a, _b, pair, reserves, i, _c, _d, pair, _e, _f, _g, e_5_1;
-            var e_6, _h, e_5, _j;
-            return __generator(this, function (_k) {
-                switch (_k.label) {
+            var promiseReserves, addresses, _a, _b, address, i, _c, _d, address;
+            var e_5, _e, e_6, _f;
+            return __generator(this, function (_g) {
+                switch (_g.label) {
                     case 0:
-                        promiseReserves = [];
+                        addresses = [];
                         try {
-                            for (_a = __values(this.usedPairsAddress.keys()), _b = _a.next(); !_b.done; _b = _a.next()) {
-                                pair = _b.value;
-                                reserves = network.getReservesPair(pair.address);
-                                promiseReserves.push(reserves);
+                            for (_a = __values(this.usedPairsAddress.values()), _b = _a.next(); !_b.done; _b = _a.next()) {
+                                address = _b.value;
+                                addresses.push(address);
+                            }
+                        }
+                        catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                        finally {
+                            try {
+                                if (_b && !_b.done && (_e = _a["return"])) _e.call(_a);
+                            }
+                            finally { if (e_5) throw e_5.error; }
+                        }
+                        return [4 /*yield*/, network.getReservesPairs(addresses)];
+                    case 1:
+                        promiseReserves = _g.sent();
+                        i = 0;
+                        try {
+                            for (_c = __values(this.usedPairsAddress.keys()), _d = _c.next(); !_d.done; _d = _c.next()) {
+                                address = _d.value;
+                                address.setReserve(promiseReserves[i][0], promiseReserves[i][1]);
+                                i++;
                             }
                         }
                         catch (e_6_1) { e_6 = { error: e_6_1 }; }
                         finally {
                             try {
-                                if (_b && !_b.done && (_h = _a["return"])) _h.call(_a);
+                                if (_d && !_d.done && (_f = _c["return"])) _f.call(_c);
                             }
                             finally { if (e_6) throw e_6.error; }
                         }
-                        i = 0;
-                        _k.label = 1;
-                    case 1:
-                        _k.trys.push([1, 7, 8, 9]);
-                        _c = __values(this.usedPairsAddress.keys()), _d = _c.next();
-                        _k.label = 2;
-                    case 2:
-                        if (!!_d.done) return [3 /*break*/, 6];
-                        pair = _d.value;
-                        _f = (_e = pair).setReserve;
-                        return [4 /*yield*/, promiseReserves[i]];
-                    case 3:
-                        _g = [(_k.sent()).reserve0];
-                        return [4 /*yield*/, promiseReserves[i]];
-                    case 4:
-                        _f.apply(_e, _g.concat([(_k.sent()).reserve1]));
-                        i++;
-                        _k.label = 5;
-                    case 5:
-                        _d = _c.next();
-                        return [3 /*break*/, 2];
-                    case 6: return [3 /*break*/, 9];
-                    case 7:
-                        e_5_1 = _k.sent();
-                        e_5 = { error: e_5_1 };
-                        return [3 /*break*/, 9];
-                    case 8:
-                        try {
-                            if (_d && !_d.done && (_j = _c["return"])) _j.call(_c);
-                        }
-                        finally { if (e_5) throw e_5.error; }
-                        return [7 /*endfinally*/];
-                    case 9: return [2 /*return*/];
+                        return [2 /*return*/];
                 }
             });
         });
@@ -291,6 +279,33 @@ var Graph = /** @class */ (function () {
             finally { if (e_7) throw e_7.error; }
         }
     };
+    Graph.prototype.getTxFeeForSymbol = function (symbol) {
+        var txFeeInEth = 0.004158;
+        if (symbol == "WETH") {
+            return 0.004158;
+        }
+        var pair = this.tokens.get("WETH").connectedPairs.get(symbol);
+        if (pair != undefined) {
+            // console.log(pair);
+            if (pair.token0.symbol == "WETH") {
+                var wethRes = pair.reserve0;
+                // console.log("WETH reserve " + wethRes);
+                var coinRes = pair.reserve1;
+                // console.log(pair.token1.symbol + " reserve " + coinRes);
+                // console.log(getTxFee(wethRes,coinRes));
+                return (0, Utils_1.getTxFee)(wethRes, coinRes);
+            }
+            else {
+                var wethRes = pair.reserve1;
+                // console.log("WETH reserve " + wethRes);
+                var coinRes = pair.reserve0;
+                // console.log(pair.token0.symbol + " reserve " + coinRes);
+                // console.log(getTxFee(wethRes,coinRes));
+                return (0, Utils_1.getTxFee)(wethRes, coinRes);
+            }
+        }
+        return "999999999999999999999999999999999999999999999999";
+    };
     Graph.prototype.searchOpportunity = function () {
         var e_8, _a;
         try {
@@ -308,7 +323,14 @@ var Graph = /** @class */ (function () {
                 p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
                 p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
                 p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
-                if (p1.token0.name == this.nameStartDFSToken) {
+                // [ 'ALBT', 'USDT', 'WETH', 'ALBT' ]
+                // ALBT reserve: 1624974.47711097601363606
+                // USDT reserve: 1837956.817906
+                // WETH reserve: 24290.021675362849489099
+                // USDT reserve: 80939273.926744
+                // ALBT reserve: 3001246.939489099913758663
+                // WETH reserve: 1005.79656164857605523
+                if (p1.token0.name == _path[0]) {
                     a1 = p1.reserve0;
                     b1 = p1.reserve1;
                     if (p1.token1.name == p2.token0.name) {
@@ -364,7 +386,7 @@ var Graph = /** @class */ (function () {
                         }
                     }
                 }
-                (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path);
+                (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path, this.getTxFeeForSymbol(_path[0]));
             }
         }
         catch (e_8_1) { e_8 = { error: e_8_1 }; }
@@ -375,6 +397,42 @@ var Graph = /** @class */ (function () {
             finally { if (e_8) throw e_8.error; }
         }
     };
+    Graph.prototype.getAllSymbols = function () {
+        var e_9, _a;
+        var allSymbols = [];
+        try {
+            for (var _b = __values(this.tokens.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var token = _c.value;
+                allSymbols.push(token);
+            }
+        }
+        catch (e_9_1) { e_9 = { error: e_9_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_9) throw e_9.error; }
+        }
+        return allSymbols;
+    };
+    Graph.prototype.findAllPathes = function (deep) {
+        var e_10, _a;
+        var allSymbols = this.getAllSymbols();
+        try {
+            for (var allSymbols_1 = __values(allSymbols), allSymbols_1_1 = allSymbols_1.next(); !allSymbols_1_1.done; allSymbols_1_1 = allSymbols_1.next()) {
+                var symbol = allSymbols_1_1.value;
+                this.findAllPathFor(symbol, deep);
+            }
+        }
+        catch (e_10_1) { e_10 = { error: e_10_1 }; }
+        finally {
+            try {
+                if (allSymbols_1_1 && !allSymbols_1_1.done && (_a = allSymbols_1["return"])) _a.call(allSymbols_1);
+            }
+            finally { if (e_10) throw e_10.error; }
+        }
+        console.log(this.allCount + " pathes finded");
+    };
     Graph.prototype.fetchInfoFromJson = function (_json) {
         var parsedJson = JSON.parse(_json);
         for (var i = 0; i < parsedJson.length; i++) {
@@ -382,6 +440,23 @@ var Graph = /** @class */ (function () {
             this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
             this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
             this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+        }
+        console.log("Pairs data is loaded");
+    };
+    Graph.prototype.logUsedPasses = function () {
+        var e_11, _a;
+        try {
+            for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var path = _c.value;
+                console.log(path[0] + " tx: " + this.getTxFeeForSymbol(path[0]));
+            }
+        }
+        catch (e_11_1) { e_11 = { error: e_11_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_11) throw e_11.error; }
         }
     };
     return Graph;

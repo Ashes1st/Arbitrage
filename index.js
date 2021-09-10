@@ -18,16 +18,17 @@ let json = fs.readFileSync("./files/main_pairs.json", "utf-8");
 const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://:" + infuraProjecSecure + "@" + network + ".infura.io/ws/v3/" + infuraProjectId));
 const graph = new Graph(web3, json);
 
-graph.findAllPathFor("WETH", 2);
+graph.findAllPathes(2);
+console.log("Finded");
 
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
         console.log("new block");
-        // graph.logUsedPairs();
         graph.updateReserves().then(()=>{
-            // graph.logInfo();
+            console.log("===========START===========");
             graph.searchOpportunity();
+            console.log("============END============");
         });
         
         return;
