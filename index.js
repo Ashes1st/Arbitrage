@@ -3,7 +3,7 @@ const { BigNumber } = require('bignumber.js');
 const utils = require('./files/Utils');
 const fs = require('fs');
 const Web3 = require('web3');
-const { infuraProjecSecure, network, infuraProjectId, privateKey } = require('./config');
+const { infuraProjecSecure, network, infuraProjectId } = require('./config');
 
 var util = require('util');
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});

@@ -83,7 +83,6 @@ var Network = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.flashBotUniswapContract.methods.getReservesByPairs(addressesPairs).call()];
                     case 1:
                         reserves = _a.sent();
-                        // console.log(reserves);
                         return [2 /*return*/, reserves];
                 }
             });

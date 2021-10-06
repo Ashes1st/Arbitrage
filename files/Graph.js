@@ -286,21 +286,14 @@ var Graph = /** @class */ (function () {
         }
         var pair = this.tokens.get("WETH").connectedPairs.get(symbol);
         if (pair != undefined) {
-            // console.log(pair);
             if (pair.token0.symbol == "WETH") {
                 var wethRes = pair.reserve0;
-                // console.log("WETH reserve " + wethRes);
                 var coinRes = pair.reserve1;
-                // console.log(pair.token1.symbol + " reserve " + coinRes);
-                // console.log(getTxFee(wethRes,coinRes));
                 return (0, Utils_1.getTxFee)(wethRes, coinRes);
             }
             else {
                 var wethRes = pair.reserve1;
-                // console.log("WETH reserve " + wethRes);
                 var coinRes = pair.reserve0;
-                // console.log(pair.token0.symbol + " reserve " + coinRes);
-                // console.log(getTxFee(wethRes,coinRes));
                 return (0, Utils_1.getTxFee)(wethRes, coinRes);
             }
         }
@@ -323,13 +316,6 @@ var Graph = /** @class */ (function () {
                 p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
                 p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
                 p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
-                // [ 'ALBT', 'USDT', 'WETH', 'ALBT' ]
-                // ALBT reserve: 1624974.47711097601363606
-                // USDT reserve: 1837956.817906
-                // WETH reserve: 24290.021675362849489099
-                // USDT reserve: 80939273.926744
-                // ALBT reserve: 3001246.939489099913758663
-                // WETH reserve: 1005.79656164857605523
                 if (p1.token0.name == _path[0]) {
                     a1 = p1.reserve0;
                     b1 = p1.reserve1;
