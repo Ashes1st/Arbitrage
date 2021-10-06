@@ -35,22 +35,34 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 exports.__esModule = true;
 exports.Network = void 0;
 //ABIs
-var IFactory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
-var IPair = require("@uniswap/v2-core/build/IUniswapV2Pair.json");
-var IRouter = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
+var IFactory = require("./ABI/factory.json");
+var IPair = require("./ABI/pair.json");
+var IRouter = require("./ABI/router.json");
+var BEP20 = require("./ABI/bep20.json");
 var IFlashBotUniswapQuery = require("./ABI/FlashSwapQueryContractABI.json");
-var addrUFactory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
-var addrURouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-var addrFlashBotUniswapQuery = "0xf522b378273394Bea84a31Db3D627c9a6fd522F0";
+var addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
+var addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
+var addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
 var Network = /** @class */ (function () {
     function Network(_web3) {
         this.contractsPair = new Map([]);
         this.web3 = _web3;
-        this.uFactory = new this.web3.eth.Contract(IFactory.abi, addrUFactory);
-        this.uRouter = new this.web3.eth.Contract(IRouter.abi, addrURouter);
+        this.uFactory = new this.web3.eth.Contract(IFactory, addrUFactory);
+        this.uRouter = new this.web3.eth.Contract(IRouter, addrURouter);
         this.flashBotUniswapContract = new this.web3.eth.Contract(IFlashBotUniswapQuery, addrFlashBotUniswapQuery);
     }
     Network.prototype.getReservesPair = function (pairAddress) {
@@ -62,7 +74,7 @@ var Network = /** @class */ (function () {
                         _reserve0 = "";
                         _reserve1 = "";
                         if (!this.contractsPair.has(pairAddress)) {
-                            pair = new this.web3.eth.Contract(IPair.abi, pairAddress);
+                            pair = new this.web3.eth.Contract(IPair, pairAddress);
                             this.contractsPair.set(pairAddress, pair);
                         }
                         return [4 /*yield*/, this.contractsPair.get(pairAddress).methods.getReserves().call()];
@@ -83,7 +95,88 @@ var Network = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.flashBotUniswapContract.methods.getReservesByPairs(addressesPairs).call()];
                     case 1:
                         reserves = _a.sent();
+                        // console.log(reserves);
                         return [2 /*return*/, reserves];
+                }
+            });
+        });
+    };
+    Network.prototype.getTokenInfo = function (tokenAddress) {
+        return __awaiter(this, void 0, void 0, function () {
+            var token, symbol, decimal;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        token = new this.web3.eth.Contract(BEP20, tokenAddress);
+                        return [4 /*yield*/, token.methods.symbol().call()];
+                    case 1:
+                        symbol = _a.sent();
+                        return [4 /*yield*/, token.methods.decimals().call()];
+                    case 2:
+                        decimal = _a.sent();
+                        // console.log(tokenAddress + " " + symbol + " " + decimal);
+                        return [2 /*return*/, [tokenAddress, symbol, decimal]];
+                }
+            });
+        });
+    };
+    Network.prototype.getPartPairs = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var result, result_1, result_1_1, element, token0, token1, e_1_1;
+            var e_1, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        console.log("[");
+                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1, 1500).call()];
+                    case 1:
+                        result = _b.sent();
+                        console.log(result);
+                        _b.label = 2;
+                    case 2:
+                        _b.trys.push([2, 8, 9, 10]);
+                        result_1 = __values(result), result_1_1 = result_1.next();
+                        _b.label = 3;
+                    case 3:
+                        if (!!result_1_1.done) return [3 /*break*/, 7];
+                        element = result_1_1.value;
+                        console.log("{");
+                        console.log('"address":"' + element[2] + '",');
+                        return [4 /*yield*/, this.getTokenInfo(element[0])]; // token 0
+                    case 4:
+                        token0 = _b.sent() // token 0
+                        ;
+                        console.log('"token0":{"decimal":' + token0[2] + ',');
+                        console.log('"adress":"' + token0[0] + '",');
+                        console.log('"symbol":"' + token0[1] + '"},');
+                        return [4 /*yield*/, this.getTokenInfo(element[1])]; // token 1
+                    case 5:
+                        token1 = _b.sent() // token 1
+                        ;
+                        console.log('"token1":{"decimal":' + token1[2] + ',');
+                        console.log('"adress":"' + token1[0] + '",');
+                        console.log('"symbol":"' + token1[1] + '"}');
+                        // console.log(element[2]) // pair
+                        // console.log(element);
+                        console.log("},");
+                        _b.label = 6;
+                    case 6:
+                        result_1_1 = result_1.next();
+                        return [3 /*break*/, 3];
+                    case 7: return [3 /*break*/, 10];
+                    case 8:
+                        e_1_1 = _b.sent();
+                        e_1 = { error: e_1_1 };
+                        return [3 /*break*/, 10];
+                    case 9:
+                        try {
+                            if (result_1_1 && !result_1_1.done && (_a = result_1["return"])) _a.call(result_1);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                        return [7 /*endfinally*/];
+                    case 10:
+                        console.log("]");
+                        return [2 /*return*/, result];
                 }
             });
         });

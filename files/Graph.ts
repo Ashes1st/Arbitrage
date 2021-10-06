@@ -2,7 +2,7 @@
 import * as BN from 'bignumber.js';
 import Web3 from 'web3';
 import { Network } from './Network';
-import { computeCircleProfitMaximization, getTxFee } from './Utils';
+import { computeCircleProfitMaximization } from './Utils';
 
 let network: Network;
 
@@ -50,7 +50,7 @@ class Token {
 class Graph {
     tokens: Map<string, Token>;
     
-    constructor(_web3: Web3, _json: string) {
+    constructor(_web3: Web3) {
         this.tokens = new Map([]);
 
         this.checked = [];
@@ -59,8 +59,6 @@ class Graph {
         this.currentPath = [];
 
         network = new Network(_web3);
-
-        this.fetchInfoFromJson(_json);
     }
 
     addToken(name:string, address: string, decimal: number){
@@ -189,22 +187,24 @@ class Graph {
     }
 
     getTxFeeForSymbol(symbol: string){
-        let txFeeInEth = 0.004158;
-        if(symbol == "WETH"){
-            return 0.004158;
+        let txFeeInEth = 0.001;
+        if(symbol == "WBNB"){
+            return 0.001;
+        } else if(symbol == "BUSD"){
+            return 0.5;
         }
-        let pair = this.tokens.get("WETH").connectedPairs.get(symbol)
-        if(pair != undefined){
-            if(pair.token0.symbol == "WETH"){
-                let wethRes = pair.reserve0;  
-                let coinRes = pair.reserve1;
-                return getTxFee(wethRes,coinRes);
-            } else {
-                let wethRes = pair.reserve1;
-                let coinRes = pair.reserve0;
-                return getTxFee(wethRes,coinRes);
-            }
-        }
+        // let pair = this.tokens.get("WETH").connectedPairs.get(symbol)
+        // if(pair != undefined){
+        //     if(pair.token0.symbol == "WETH"){
+        //         let wethRes = pair.reserve0;  
+        //         let coinRes = pair.reserve1;
+        //         return getTxFee(wethRes,coinRes);
+        //     } else {
+        //         let wethRes = pair.reserve1;
+        //         let coinRes = pair.reserve0;
+        //         return getTxFee(wethRes,coinRes);
+        //     }
+        // }
         return "999999999999999999999999999999999999999999999999";
     }
 
@@ -287,23 +287,29 @@ class Graph {
     findAllPathes(deep: number){
         let allSymbols = this.getAllSymbols();
 
-        for(let symbol of allSymbols){
-            this.findAllPathFor(symbol, deep);
-        }
-        console.log(this.allCount + " pathes finded");
+        this.findAllPathFor("WBNB", deep);
+        this.findAllPathFor("BUSD", deep);
+
+        // for(let symbol of allSymbols){
+        //     this.findAllPathFor(symbol, deep);
+        // }
+        console.log(this.allCount + " pathes was found");
     }
 
-    private fetchInfoFromJson(_json: string) {
+    private fetchInfo(_json) {
+        // network.getPartPairs();
         let parsedJson = JSON.parse(_json);
 
-        
         for (let i = 0; i < parsedJson.length; i++) {
             const element = parsedJson[i];
             this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
             this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
             this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
         }
-        console.log("Pairs data is loaded");
+
+        console.log("Pairs data is loaded:");
+        console.log(parsedJson.length + ": pairs count");
+        console.log(this.tokens.size + ": tokens count");
     }
 
     logUsedPasses(){

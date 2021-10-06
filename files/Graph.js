@@ -83,7 +83,7 @@ var Token = /** @class */ (function () {
 }());
 exports.Token = Token;
 var Graph = /** @class */ (function () {
-    function Graph(_web3, _json) {
+    function Graph(_web3) {
         this.usedPathes = [];
         this.checked = [];
         this.usedNames = [];
@@ -94,7 +94,6 @@ var Graph = /** @class */ (function () {
         this.allCount = 0;
         this.currentPath = [];
         network = new Network_1.Network(_web3);
-        this.fetchInfoFromJson(_json);
     }
     Graph.prototype.addToken = function (name, address, decimal) {
         if (this.tokens.get(name) == undefined) {
@@ -280,23 +279,25 @@ var Graph = /** @class */ (function () {
         }
     };
     Graph.prototype.getTxFeeForSymbol = function (symbol) {
-        var txFeeInEth = 0.004158;
-        if (symbol == "WETH") {
-            return 0.004158;
+        var txFeeInEth = 0.001;
+        if (symbol == "WBNB") {
+            return 0.001;
         }
-        var pair = this.tokens.get("WETH").connectedPairs.get(symbol);
-        if (pair != undefined) {
-            if (pair.token0.symbol == "WETH") {
-                var wethRes = pair.reserve0;
-                var coinRes = pair.reserve1;
-                return (0, Utils_1.getTxFee)(wethRes, coinRes);
-            }
-            else {
-                var wethRes = pair.reserve1;
-                var coinRes = pair.reserve0;
-                return (0, Utils_1.getTxFee)(wethRes, coinRes);
-            }
+        else if (symbol == "BUSD") {
+            return 0.5;
         }
+        // let pair = this.tokens.get("WETH").connectedPairs.get(symbol)
+        // if(pair != undefined){
+        //     if(pair.token0.symbol == "WETH"){
+        //         let wethRes = pair.reserve0;  
+        //         let coinRes = pair.reserve1;
+        //         return getTxFee(wethRes,coinRes);
+        //     } else {
+        //         let wethRes = pair.reserve1;
+        //         let coinRes = pair.reserve0;
+        //         return getTxFee(wethRes,coinRes);
+        //     }
+        // }
         return "999999999999999999999999999999999999999999999999";
     };
     Graph.prototype.searchOpportunity = function () {
@@ -402,24 +403,16 @@ var Graph = /** @class */ (function () {
         return allSymbols;
     };
     Graph.prototype.findAllPathes = function (deep) {
-        var e_10, _a;
         var allSymbols = this.getAllSymbols();
-        try {
-            for (var allSymbols_1 = __values(allSymbols), allSymbols_1_1 = allSymbols_1.next(); !allSymbols_1_1.done; allSymbols_1_1 = allSymbols_1.next()) {
-                var symbol = allSymbols_1_1.value;
-                this.findAllPathFor(symbol, deep);
-            }
-        }
-        catch (e_10_1) { e_10 = { error: e_10_1 }; }
-        finally {
-            try {
-                if (allSymbols_1_1 && !allSymbols_1_1.done && (_a = allSymbols_1["return"])) _a.call(allSymbols_1);
-            }
-            finally { if (e_10) throw e_10.error; }
-        }
-        console.log(this.allCount + " pathes finded");
+        this.findAllPathFor("WBNB", deep);
+        this.findAllPathFor("BUSD", deep);
+        // for(let symbol of allSymbols){
+        //     this.findAllPathFor(symbol, deep);
+        // }
+        console.log(this.allCount + " pathes was found");
     };
-    Graph.prototype.fetchInfoFromJson = function (_json) {
+    Graph.prototype.fetchInfo = function (_json) {
+        // network.getPartPairs();
         var parsedJson = JSON.parse(_json);
         for (var i = 0; i < parsedJson.length; i++) {
             var element = parsedJson[i];
@@ -427,22 +420,24 @@ var Graph = /** @class */ (function () {
             this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
             this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
         }
-        console.log("Pairs data is loaded");
+        console.log("Pairs data is loaded:");
+        console.log(parsedJson.length + ": pairs count");
+        console.log(this.tokens.size + ": tokens count");
     };
     Graph.prototype.logUsedPasses = function () {
-        var e_11, _a;
+        var e_10, _a;
         try {
             for (var _b = __values(this.usedPathes), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var path = _c.value;
                 console.log(path[0] + " tx: " + this.getTxFeeForSymbol(path[0]));
             }
         }
-        catch (e_11_1) { e_11 = { error: e_11_1 }; }
+        catch (e_10_1) { e_10 = { error: e_10_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
             }
-            finally { if (e_11) throw e_11.error; }
+            finally { if (e_10) throw e_10.error; }
         }
     };
     return Graph;

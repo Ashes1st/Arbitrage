@@ -14,21 +14,22 @@ console.log = function(d) { //
   log_stdout.write(util.format(d) + '\n');
 };
 
-let json = fs.readFileSync("./files/main_pairs.json", "utf-8");
-const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://:" + infuraProjecSecure + "@" + network + ".infura.io/ws/v3/" + infuraProjectId));
-const graph = new Graph(web3, json);
+let json = fs.readFileSync("./files/pairs.json", "utf-8");
+const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://young-polished-dew.bsc.quiknode.pro/5b7143ea2f5c8dabdc55045a218c2bcc9880fe69/"));
 
+const graph = new Graph(web3);
+graph.fetchInfo(json);
 graph.findAllPathes(2);
 console.log("Finded");
 
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
-        console.log("new block");
+        // console.log("new block");
         graph.updateReserves().then(()=>{
-            console.log("===========START===========");
+            // console.log("===========START===========");
             graph.searchOpportunity();
-            console.log("============END============");
+            // console.log("============END============");
         });
         
         return;

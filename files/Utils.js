@@ -10,13 +10,13 @@ console.log = function(d) { //
   log_stdout.write(util.format(d) + '\n');
 };
 
-module.exports.getTxFee = function (res0, res1) {
-    let txFee = BigNumber("0.004158");
-    let wethRes = BigNumber(res0);
-    let coinRes = BigNumber(res1);
+// module.exports.getTxFee = function (res0, res1) {
+//     let txFee = BigNumber("0.004158");
+//     let wethRes = BigNumber(res0);
+//     let coinRes = BigNumber(res1);
 
-    return txFee.times(coinRes.div(wethRes)).toString();
-}
+//     return txFee.times(coinRes.div(wethRes)).toString();
+// }
 
 //a1>b1>b2>c2>c3>a3  a3-a1 = profit
 module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3,path, _txFee) {
