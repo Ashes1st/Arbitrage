@@ -6,6 +6,9 @@ import { computeCircleProfitMaximization } from './Utils';
 
 let network: Network;
 
+let BUSDAddress = '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56';
+let WBNBAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+
 class Pair {
     address: string;
     token0: Token;
@@ -296,8 +299,11 @@ class Graph {
         console.log(this.allCount + " pathes was found");
     }
 
-    private fetchInfo(_json) {
-        // network.getPartPairs();
+    getPartPairs(){
+        network.getPartPairs();
+    }
+
+    fetchInfo(_json) {
         let parsedJson = JSON.parse(_json);
 
         for (let i = 0; i < parsedJson.length; i++) {

@@ -1,5 +1,7 @@
 /node_modules/*
 config.js
+.env
+.vscode/
 debug.log
 /files/Graph.js
 /files/Graph_.js

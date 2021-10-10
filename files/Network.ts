@@ -13,6 +13,8 @@ const addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 const addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
 
+var bullet = 1;
+
 class Network {
     private uFactory: Contract;
     private uRouter: Contract;
@@ -65,21 +67,21 @@ class Network {
     async getPartPairs(): Promise<string[][]>{
         console.log("[");
         
-        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1, 1500).call();
-        console.log(result);
+        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 253, 1500).call();
+        // console.log(result);
 
         for(const element of result){
             console.log("{");
             console.log('"address":"' + element[2] + '",');
             const token0 = await this.getTokenInfo(element[0])// token 0
             console.log('"token0":{"decimal":'+token0[2]+',');
-            console.log('"adress":"'+token0[0]+'",');
+            console.log('"address":"'+token0[0]+'",');
             console.log('"symbol":"'+token0[1]+'"},')
             
              
             const token1 = await this.getTokenInfo(element[1]) // token 1
             console.log('"token1":{"decimal":'+token1[2]+',');
-            console.log('"adress":"'+token1[0]+'",');
+            console.log('"address":"'+token1[0]+'",');
             console.log('"symbol":"'+token1[1]+'"}')
             // console.log(element[2]) // pair
             // console.log(element);
@@ -90,6 +92,10 @@ class Network {
         console.log("]");
 
         return result;
+    }
+
+    async doArbitrage(amountIn: string, path: string[]){
+        // let result = await this.uRouter.methods.swapExactTokensForTokens(amountIn, amountOutMin, path, msg.sender, deadline).call()
     }
 }
 

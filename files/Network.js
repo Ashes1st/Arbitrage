@@ -57,6 +57,7 @@ var IFlashBotUniswapQuery = require("./ABI/FlashSwapQueryContractABI.json");
 var addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 var addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 var addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
+var bullet = 1;
 var Network = /** @class */ (function () {
     function Network(_web3) {
         this.contractsPair = new Map([]);
@@ -128,10 +129,9 @@ var Network = /** @class */ (function () {
                 switch (_b.label) {
                     case 0:
                         console.log("[");
-                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1, 1500).call()];
+                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 253, 1500).call()];
                     case 1:
                         result = _b.sent();
-                        console.log(result);
                         _b.label = 2;
                     case 2:
                         _b.trys.push([2, 8, 9, 10]);
@@ -147,14 +147,14 @@ var Network = /** @class */ (function () {
                         token0 = _b.sent() // token 0
                         ;
                         console.log('"token0":{"decimal":' + token0[2] + ',');
-                        console.log('"adress":"' + token0[0] + '",');
+                        console.log('"address":"' + token0[0] + '",');
                         console.log('"symbol":"' + token0[1] + '"},');
                         return [4 /*yield*/, this.getTokenInfo(element[1])]; // token 1
                     case 5:
                         token1 = _b.sent() // token 1
                         ;
                         console.log('"token1":{"decimal":' + token1[2] + ',');
-                        console.log('"adress":"' + token1[0] + '",');
+                        console.log('"address":"' + token1[0] + '",');
                         console.log('"symbol":"' + token1[1] + '"}');
                         // console.log(element[2]) // pair
                         // console.log(element);
@@ -178,6 +178,13 @@ var Network = /** @class */ (function () {
                         console.log("]");
                         return [2 /*return*/, result];
                 }
+            });
+        });
+    };
+    Network.prototype.doArbitrage = function (amountIn, path) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
             });
         });
     };

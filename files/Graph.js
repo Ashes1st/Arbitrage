@@ -52,6 +52,8 @@ var BN = require("bignumber.js");
 var Network_1 = require("./Network");
 var Utils_1 = require("./Utils");
 var network;
+var BUSDAddress = '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56';
+var WBNBAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 var Pair = /** @class */ (function () {
     function Pair(_token0, _token1, _address) {
         this.token0 = _token0;
@@ -406,13 +408,18 @@ var Graph = /** @class */ (function () {
         var allSymbols = this.getAllSymbols();
         this.findAllPathFor("WBNB", deep);
         this.findAllPathFor("BUSD", deep);
+        // this.findAllPathFor("BTCB", deep);
+        // this.findAllPathFor("CAKE", deep);
+        console.log(this.tokens);
         // for(let symbol of allSymbols){
         //     this.findAllPathFor(symbol, deep);
         // }
         console.log(this.allCount + " pathes was found");
     };
+    Graph.prototype.getPartPairs = function () {
+        network.getPartPairs();
+    };
     Graph.prototype.fetchInfo = function (_json) {
-        // network.getPartPairs();
         var parsedJson = JSON.parse(_json);
         for (var i = 0; i < parsedJson.length; i++) {
             var element = parsedJson[i];

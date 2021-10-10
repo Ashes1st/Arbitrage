@@ -18,36 +18,46 @@ let json = fs.readFileSync("./files/pairs.json", "utf-8");
 const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://young-polished-dew.bsc.quiknode.pro/5b7143ea2f5c8dabdc55045a218c2bcc9880fe69/"));
 
 const graph = new Graph(web3);
+// graph.getPartPairs();
 graph.fetchInfo(json);
 graph.findAllPathes(2);
 console.log("Finded");
 
-console.log("Subsctiption turn on");
-var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
-    if (!error) {
-        // console.log("new block");
-        graph.updateReserves().then(()=>{
-            // console.log("===========START===========");
-            graph.searchOpportunity();
-            // console.log("============END============");
-        });
-        
-        return;
-    }
+async function sub(){
+    console.log("Subsctiption turn on");
+    var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
+        if (!error) {
+            console.log("new block");
+            graph.updateReserves().then(()=>{
+                // console.log("===========START===========");
+                graph.searchOpportunity();
+                // console.log("============END============");
+            });
+            
+            return;
+        }
+        sub();
+        console.error(error);
+    })
+    .on("connected", function(subscriptionId){
+        console.log(subscriptionId);
+    })
+    .on("data", function(blockHeader){
+        console.log(blockHeader.number);
+    })
+    .on("error", function(error){
+        console.log(error);
+        sub();
+    });
 
-    console.error(error);
-})
-.on("connected", function(subscriptionId){
-    console.log(subscriptionId);
-})
-.on("data", function(blockHeader){
-    console.log(blockHeader.number);
-})
-.on("error", console.error);
+    // unsubscribes the subscription
+    subscription.unsubscribe(function(error, success){
+        if (success) {
+            console.log('Successfully unsubscribed!');
+        }
+    });
+}
 
-// unsubscribes the subscription
-subscription.unsubscribe(function(error, success){
-    if (success) {
-        console.log('Successfully unsubscribed!');
-    }
-});
+sub();
+
+
