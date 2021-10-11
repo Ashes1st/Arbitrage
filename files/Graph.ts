@@ -65,10 +65,10 @@ class Graph {
     }
 
     addToken(name:string, address: string, decimal: number){
-        if(this.tokens.get(name) == undefined){
+        if(this.tokens.get(address) == undefined){
             let token = new Token(name, address);
             token.setDecimal(decimal);
-            this.tokens.set(name, token);
+            this.tokens.set(address, token);
         }
     }
 
@@ -141,8 +141,8 @@ class Graph {
         
         var currentToken = this.tokens.get(nameStartToken);
         var countPathTokens = 0;
-        this.currentPath.push(currentToken.name);
-        this.checked.push(currentToken.name);
+        this.currentPath.push(currentToken.address);
+        this.checked.push(currentToken.address);
 
         this.usedNames.push(this.nameStartDFSToken);
 
@@ -191,10 +191,10 @@ class Graph {
 
     getTxFeeForSymbol(symbol: string){
         let txFeeInEth = 0.001;
-        if(symbol == "WBNB"){
-            return 0.001;
-        } else if(symbol == "BUSD"){
-            return 0.5;
+        if(symbol == WBNBAddress){
+            return 0.004;
+        } else if(symbol == BUSDAddress){
+            return 2;
         }
         // let pair = this.tokens.get("WETH").connectedPairs.get(symbol)
         // if(pair != undefined){
@@ -225,13 +225,13 @@ class Graph {
             p1 = this.tokens.get(_path[0]).connectedPairs.get(_path[1]);
             p2 = this.tokens.get(_path[1]).connectedPairs.get(_path[2]);
             p3 = this.tokens.get(_path[2]).connectedPairs.get(_path[3]);
-            if(p1.token0.name == _path[0]){
+            if(p1.token0.address == _path[0]){
                 a1 = p1.reserve0;
                 b1 = p1.reserve1;
-                if(p1.token1.name == p2.token0.name){
+                if(p1.token1.address == p2.token0.address){
                     b2 = p2.reserve0;
                     c2 = p2.reserve1;
-                    if(p2.token1.name == p3.token0.name){
+                    if(p2.token1.address == p3.token0.address){
                         c3 = p3.reserve0;
                         a3 = p3.reserve1;
                     } else {
@@ -241,7 +241,7 @@ class Graph {
                 } else {
                     b2 = p2.reserve1;
                     c2 = p2.reserve0;
-                    if(p2.token0.name == p3.token0.name){
+                    if(p2.token0.address == p3.token0.address){
                         c3 = p3.reserve0;
                         a3 = p3.reserve1;
                     } else {
@@ -252,10 +252,10 @@ class Graph {
             } else {
                 a1 = p1.reserve1;
                 b1 = p1.reserve0;
-                if(p1.token0.name == p2.token1.name){
+                if(p1.token0.address == p2.token1.address){
                     b2 = p2.reserve1;
                     c2 = p2.reserve0;
-                    if(p2.token0.name == p3.token0.name){
+                    if(p2.token0.address == p3.token0.address){
                         c3 = p3.reserve0;
                         a3 = p3.reserve1;
                     } else {
@@ -265,7 +265,7 @@ class Graph {
                 } else {
                     b2 = p2.reserve0;
                     c2 = p2.reserve1;
-                    if(p2.token1.name == p3.token0.name){
+                    if(p2.token1.address == p3.token0.address){
                         c3 = p3.reserve0;
                         a3 = p3.reserve1;
                     } else {
@@ -290,8 +290,8 @@ class Graph {
     findAllPathes(deep: number){
         let allSymbols = this.getAllSymbols();
 
-        this.findAllPathFor("WBNB", deep);
-        this.findAllPathFor("BUSD", deep);
+        this.findAllPathFor(WBNBAddress, deep);
+        // this.findAllPathFor(BUSDAddress, deep);
 
         // for(let symbol of allSymbols){
         //     this.findAllPathFor(symbol, deep);
@@ -310,9 +310,9 @@ class Graph {
             const element = parsedJson[i];
             this.addToken(element['token0']['symbol'], element['token0']['address'], element['token0']['decimal']);
             this.addToken(element['token1']['symbol'], element['token1']['address'], element['token1']['decimal']);
-            this.addEdge(element['token0']['symbol'], element['token1']['symbol'], element['address']);
+            this.addEdge(element['token0']['address'], element['token1']['address'], element['address']);
         }
-
+        
         console.log("Pairs data is loaded:");
         console.log(parsedJson.length + ": pairs count");
         console.log(this.tokens.size + ": tokens count");

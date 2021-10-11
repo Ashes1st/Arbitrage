@@ -123,7 +123,7 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     }
 }
 
-// Computing profit across two DEXes
+// Computing profit accross two DEXes
 module.exports.computeProfitMaximizing = function (uRusdt, uRweth, sRusdt, sRweth, blockNumber, dirUtoS) {
     var x = 0;
     var a,b,c,d;
