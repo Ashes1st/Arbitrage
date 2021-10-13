@@ -184,12 +184,9 @@ var Graph = /** @class */ (function () {
         this.currentPath.push(currentToken.address);
         this.checked.push(currentToken.address);
         this.usedNames.push(this.nameStartDFSToken);
-        var i = 1;
-        console.log(currentToken.connectedPairs.size);
         try {
             for (var _b = __values(currentToken.connectedPairs.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var tokenName = _c.value;
-                console.log(i++);
                 this.currentPath.push(tokenName);
                 this.dfs(tokenName, countPathTokens + 1, deep);
                 this.currentPath.pop();

@@ -150,12 +150,8 @@ class Graph {
         this.checked.push(currentToken.address);
 
         this.usedNames.push(this.nameStartDFSToken);
-        var i = 1;
-        console.log(currentToken.connectedPairs.size);
         
         for(let tokenName of currentToken.connectedPairs.keys()){
-            console.log(i++);
-            
             this.currentPath.push(tokenName);
             this.dfs(tokenName, countPathTokens+1, deep);
             this.currentPath.pop();
