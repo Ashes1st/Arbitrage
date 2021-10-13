@@ -125,6 +125,11 @@ class Graph {
                 this.currentPath.pop();
                 continue;
             }
+            
+            if(count == deep){
+                this.currentPath.pop();
+                continue;
+            }
 
             if(!this.checked.includes(nextTokenName)){
                 this.dfs(nextTokenName, count+1, deep);
@@ -145,8 +150,12 @@ class Graph {
         this.checked.push(currentToken.address);
 
         this.usedNames.push(this.nameStartDFSToken);
-
+        var i = 1;
+        console.log(currentToken.connectedPairs.size);
+        
         for(let tokenName of currentToken.connectedPairs.keys()){
+            console.log(i++);
+            
             this.currentPath.push(tokenName);
             this.dfs(tokenName, countPathTokens+1, deep);
             this.currentPath.pop();
@@ -290,8 +299,8 @@ class Graph {
     findAllPathes(deep: number){
         let allSymbols = this.getAllSymbols();
 
-        this.findAllPathFor(WBNBAddress, deep);
-        // this.findAllPathFor(BUSDAddress, deep);
+        // this.findAllPathFor(WBNBAddress, deep);
+        this.findAllPathFor(BUSDAddress, deep);
 
         // for(let symbol of allSymbols){
         //     this.findAllPathFor(symbol, deep);

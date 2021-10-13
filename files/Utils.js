@@ -18,6 +18,14 @@ console.log = function(d) { //
 //     return txFee.times(coinRes.div(wethRes)).toString();
 // }
 
+function getAmountOut(amountIn, reserveIn, reserveOut) {
+    var amountInWithFee = amountIn.times(BigNumber(9975));
+    var numerator = amountInWithFee.times(reserveOut);
+    var denominator = reserveIn.times(BigNumber(10000)).plus(amountInWithFee);
+    amountOut = numerator.div(denominator);
+    return amountOut;
+}
+
 //a1>b1>b2>c2>c3>a3  a3-a1 = profit
 module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_a3,path, _txFee) {
     
@@ -112,7 +120,9 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     } else {
         return 0;
     }
-    let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0003)).times(x))).minus(txFee);
+    // let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0025)).times(x))).minus(txFee);
+    let profit = getAmountOut(getAmountOut(getAmountOut(x, a1, b1), b2, c2), c3, a3).minus(x).minus(txFee);
+    // let p = a1.plus(x.times(BigNumber(0.9975))
     
     if(profit.isGreaterThan(BigNumber(0))){
         console.log(path);

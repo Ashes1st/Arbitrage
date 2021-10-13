@@ -67,7 +67,7 @@ class Network {
     async getPartPairs(): Promise<string[][]>{
         console.log("[");
         
-        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 253, 1500).call();
+        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1501, 2500).call();
         // console.log(result);
 
         for(const element of result){

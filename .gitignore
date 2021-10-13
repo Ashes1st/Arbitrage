@@ -7,3 +7,5 @@ debug.log
 /files/Graph_.js
 /files/test.js
 /files/Path.ts
+/contracts/pair.sol
+/contracts/router.sol

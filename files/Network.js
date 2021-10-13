@@ -129,7 +129,7 @@ var Network = /** @class */ (function () {
                 switch (_b.label) {
                     case 0:
                         console.log("[");
-                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 253, 1500).call()];
+                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1501, 2500).call()];
                     case 1:
                         result = _b.sent();
                         _b.label = 2;

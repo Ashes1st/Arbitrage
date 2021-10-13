@@ -15,7 +15,8 @@ console.log = function(d) { //
 };
 
 let json = fs.readFileSync("./files/pairs.json", "utf-8");
-const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://young-polished-dew.bsc.quiknode.pro/5b7143ea2f5c8dabdc55045a218c2bcc9880fe69/"));
+const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://long-white-frog.bsc.quiknode.pro/67e33300c92816a48249122066087bc26b47adb6/"));
+
 
 const graph = new Graph(web3);
 // graph.getPartPairs();
