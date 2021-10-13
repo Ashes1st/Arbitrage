@@ -410,8 +410,8 @@ var Graph = /** @class */ (function () {
     };
     Graph.prototype.findAllPathes = function (deep) {
         var allSymbols = this.getAllSymbols();
-        // this.findAllPathFor(WBNBAddress, deep);
-        this.findAllPathFor(BUSDAddress, deep);
+        this.findAllPathFor(WBNBAddress, deep);
+        // this.findAllPathFor(BUSDAddress, deep);
         // for(let symbol of allSymbols){
         //     this.findAllPathFor(symbol, deep);
         // }

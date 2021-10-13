@@ -295,8 +295,8 @@ class Graph {
     findAllPathes(deep: number){
         let allSymbols = this.getAllSymbols();
 
-        // this.findAllPathFor(WBNBAddress, deep);
-        this.findAllPathFor(BUSDAddress, deep);
+        this.findAllPathFor(WBNBAddress, deep);
+        // this.findAllPathFor(BUSDAddress, deep);
 
         // for(let symbol of allSymbols){
         //     this.findAllPathFor(symbol, deep);
