@@ -14,22 +14,22 @@ console.log = function(d) { //
   log_stdout.write(util.format(d) + '\n');
 };
 
-let json = fs.readFileSync("./files/main_pairs.json", "utf-8");
-const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://:" + infuraProjecSecure + "@" + network + ".infura.io/ws/v3/" + infuraProjectId));
-const graph = new Graph(web3, json);
+// let json = fs.readFileSync("./files/main_pairs.json", "utf-8");
+const web3 = new Web3(new Web3.providers.WebsocketProvider("wss://apis-sj.ankr.com/wss/0bfb7ace31254454ab57f5dc315d1072/2dc81f5d30f7ceb4ef1c109d6b77c2c3/fantom/full/main"));
+// const graph = new Graph(web3, json);
 
-graph.findAllPathes(2);
-console.log("Finded");
+// graph.findAllPathes(2);
+// console.log("Finded");
 
 console.log("Subsctiption turn on");
 var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
     if (!error) {
-        console.log("new block");
-        graph.updateReserves().then(()=>{
-            console.log("===========START===========");
-            graph.searchOpportunity();
-            console.log("============END============");
-        });
+        console.log("new block" + result.number);
+        // graph.updateReserves().then(()=>{
+            // console.log("===========START===========");
+            // graph.searchOpportunity();
+            // console.log("============END============");
+        // });
         
         return;
     }
