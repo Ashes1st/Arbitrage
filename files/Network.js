@@ -48,16 +48,26 @@ var __values = (this && this.__values) || function(o) {
 };
 exports.__esModule = true;
 exports.Network = void 0;
+var config_js_1 = require("../config.js");
+var Tx = require('ethereumjs-tx').Transaction;
+var Common = require('ethereumjs-common')["default"];
 //ABIs
 var IFactory = require("./ABI/factory.json");
 var IPair = require("./ABI/pair.json");
 var IRouter = require("./ABI/router.json");
 var BEP20 = require("./ABI/bep20.json");
 var IFlashBotUniswapQuery = require("./ABI/FlashSwapQueryContractABI.json");
+var bignumber_js_1 = require("bignumber.js");
 var addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 var addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 var addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
 var bullet = 1;
+var BSC_FORK = Common.forCustomChain('mainnet', {
+    name: 'Binance Smart Chain Mainnet',
+    networkId: 56,
+    chainId: 56,
+    url: 'https://bsc-dataseed.binance.org/'
+}, 'istanbul');
 var Network = /** @class */ (function () {
     function Network(_web3) {
         this.contractsPair = new Map([]);
@@ -129,7 +139,7 @@ var Network = /** @class */ (function () {
                 switch (_b.label) {
                     case 0:
                         console.log("[");
-                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1501, 2500).call()];
+                        return [4 /*yield*/, this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 2501, 3000).call()];
                     case 1:
                         result = _b.sent();
                         _b.label = 2;
@@ -183,8 +193,42 @@ var Network = /** @class */ (function () {
     };
     Network.prototype.doArbitrage = function (amountIn, path) {
         return __awaiter(this, void 0, void 0, function () {
+            var weiIn, amountOutMin, data, count, rawTransaction, transaction, result;
             return __generator(this, function (_a) {
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        if (!(bullet == 1)) return [3 /*break*/, 4];
+                        bullet++;
+                        weiIn = (new bignumber_js_1.BigNumber(amountIn).times((new bignumber_js_1.BigNumber(10).pow(18)))).toString().split('.')[0];
+                        if (!new bignumber_js_1.BigNumber(weiIn).isLessThanOrEqualTo(new bignumber_js_1.BigNumber("498000000000000000"))) return [3 /*break*/, 3];
+                        amountOutMin = new bignumber_js_1.BigNumber(weiIn)
+                            .plus(4000000000000000) // txFee 0.004 BNB
+                            .toString();
+                        data = this.uRouter.methods.swapExactTokensForTokens(this.web3.utils.toHex(weiIn), this.web3.utils.toHex(amountOutMin), path, config_js_1.accountAddress, this.web3.utils.toHex(Math.round(Date.now() / 1000) + 60));
+                        return [4 /*yield*/, this.web3.eth.getTransactionCount(config_js_1.accountAddress)];
+                    case 1:
+                        count = _a.sent();
+                        rawTransaction = {
+                            "from": config_js_1.accountAddress,
+                            "gasPrice": this.web3.utils.toHex(5000000000),
+                            "gasLimit": this.web3.utils.toHex(1500000),
+                            "to": addrURouter,
+                            "value": this.web3.utils.toHex(0),
+                            "data": data.encodeABI(),
+                            "nonce": this.web3.utils.toHex(count)
+                        };
+                        transaction = new Tx(rawTransaction, { 'common': BSC_FORK });
+                        transaction.sign(Buffer.from(config_js_1.privateKey, 'hex'));
+                        return [4 /*yield*/, this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))];
+                    case 2:
+                        result = _a.sent();
+                        console.log(result);
+                        return [3 /*break*/, 4];
+                    case 3:
+                        console.log("NOT ENOGH TOKENS");
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
             });
         });
     };

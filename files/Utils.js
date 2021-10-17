@@ -130,6 +130,9 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
                     ", input: " + x.toString() + " " + path[0] + 
                     ", % profit: " + profit.times(BigNumber(100)).div(x).toString() + "%" + 
                     ", txFee: " + txFee.toString() + " " + path[0]);
+        return x.toString();
+    } else {
+        return 0;
     }
 }
 

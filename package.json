@@ -14,6 +14,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "bignumber.js": "^9.0.1",
     "dotenv": "^10.0.0",
+    "ethereumjs-tx": "^2.1.2",
     "ethers": "^5.4.4",
     "graph-data-structure": "^2.0.0",
     "sushiswap-api": "^1.1.1",

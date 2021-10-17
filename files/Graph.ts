@@ -280,7 +280,10 @@ class Graph {
                 }
             }
             
-            computeCircleProfitMaximization(a1,b1,b2,c2,c3,a3, _path, this.getTxFeeForSymbol(_path[0]));
+            let res = computeCircleProfitMaximization(a1,b1,b2,c2,c3,a3, _path, this.getTxFeeForSymbol(_path[0]));
+            if(res > 0){
+                network.doArbitrage(res, _path);
+            }
         }
     }
 

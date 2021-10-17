@@ -28,7 +28,7 @@ async function sub(){
     console.log("Subsctiption turn on");
     var subscription = web3.eth.subscribe('newBlockHeaders', async function(error, result){
         if (!error) {
-            console.log("new block");
+            console.log("new block #" + result.number);
             graph.updateReserves().then(()=>{
                 // console.log("===========START===========");
                 graph.searchOpportunity();

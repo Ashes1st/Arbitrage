@@ -1,6 +1,9 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils'
 import { Contract } from 'web3-eth-contract'
+import { privateKey, accountAddress } from '../config.js';
+var Tx = require('ethereumjs-tx').Transaction;
+var Common = require('ethereumjs-common').default;
 
 //ABIs
 import * as IFactory from './ABI/factory.json';
@@ -8,12 +11,23 @@ import * as IPair from './ABI/pair.json';
 import * as IRouter from './ABI/router.json';
 import * as BEP20 from './ABI/bep20.json';
 import * as IFlashBotUniswapQuery from './ABI/FlashSwapQueryContractABI.json';
+import { BigNumber } from 'bignumber.js';
 
 const addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 const addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
 
 var bullet = 1;
+var BSC_FORK = Common.forCustomChain(
+    'mainnet',
+    {
+        name: 'Binance Smart Chain Mainnet',
+        networkId: 56,
+        chainId: 56,
+        url: 'https://bsc-dataseed.binance.org/'
+    },
+    'istanbul',
+);
 
 class Network {
     private uFactory: Contract;
@@ -67,7 +81,7 @@ class Network {
     async getPartPairs(): Promise<string[][]>{
         console.log("[");
         
-        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 1501, 2500).call();
+        let result = await this.flashBotUniswapContract.methods.getPairsByIndexRange(addrUFactory, 2501, 3000).call();
         // console.log(result);
 
         for(const element of result){
@@ -95,6 +109,44 @@ class Network {
     }
 
     async doArbitrage(amountIn: string, path: string[]){
+        if(bullet == 1){
+            bullet++;
+            let weiIn = (new BigNumber(amountIn).times((new BigNumber(10).pow(18)))).toString().split('.')[0];
+            if(new BigNumber(weiIn).isLessThanOrEqualTo(new BigNumber("498000000000000000"))){
+                let amountOutMin = new BigNumber(weiIn)
+                .plus(4000000000000000) // txFee 0.004 BNB
+                .toString(); 
+            
+                var data = this.uRouter.methods.swapExactTokensForTokens(
+                    this.web3.utils.toHex(weiIn),
+                    this.web3.utils.toHex(amountOutMin),
+                    path,
+                    accountAddress,
+                    this.web3.utils.toHex(Math.round(Date.now()/1000)+60),
+                );
+            
+                var count = await this.web3.eth.getTransactionCount(accountAddress);
+                var rawTransaction = {
+                    "from":accountAddress,
+                    "gasPrice":this.web3.utils.toHex(5_000_000_000),
+                    "gasLimit":this.web3.utils.toHex(1_500_000),
+                    "to":addrURouter,
+                    "value":this.web3.utils.toHex(0),
+                    "data":data.encodeABI(),
+                    "nonce":this.web3.utils.toHex(count)
+                };
+            
+                var transaction = new Tx(rawTransaction, { 'common': BSC_FORK });
+                transaction.sign(Buffer.from(privateKey, 'hex'));
+                
+                var result = await this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'));
+                console.log(result)
+            } else {
+                console.log("NOT ENOGH TOKENS");
+            }
+            
+            // return result;
+        }
         // let result = await this.uRouter.methods.swapExactTokensForTokens(amountIn, amountOutMin, path, msg.sender, deadline).call()
     }
 }

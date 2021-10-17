@@ -379,7 +379,10 @@ var Graph = /** @class */ (function () {
                         }
                     }
                 }
-                (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path, this.getTxFeeForSymbol(_path[0]));
+                var res = (0, Utils_1.computeCircleProfitMaximization)(a1, b1, b2, c2, c3, a3, _path, this.getTxFeeForSymbol(_path[0]));
+                if (res > 0) {
+                    network.doArbitrage(res, _path);
+                }
             }
         }
         catch (e_8_1) { e_8 = { error: e_8_1 }; }
