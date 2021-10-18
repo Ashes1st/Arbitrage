@@ -17,7 +17,7 @@ const addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 const addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
 
-var bullet = 1;
+var bullet = 5;
 var BSC_FORK = Common.forCustomChain(
     'mainnet',
     {
@@ -108,45 +108,56 @@ class Network {
         return result;
     }
 
+    usedPath: Map<string[], string> = new Map([]);
+
     async doArbitrage(amountIn: string, path: string[]){
-        if(bullet == 1){
-            bullet++;
-            let weiIn = (new BigNumber(amountIn).times((new BigNumber(10).pow(18)))).toString().split('.')[0];
-            if(new BigNumber(weiIn).isLessThanOrEqualTo(new BigNumber("498000000000000000"))){
-                let amountOutMin = new BigNumber(weiIn)
-                .plus(4000000000000000) // txFee 0.004 BNB
-                .toString(); 
-            
-                var data = this.uRouter.methods.swapExactTokensForTokens(
-                    this.web3.utils.toHex(weiIn),
-                    this.web3.utils.toHex(amountOutMin),
-                    path,
-                    accountAddress,
-                    this.web3.utils.toHex(Math.round(Date.now()/1000)+60),
-                );
-            
-                var count = await this.web3.eth.getTransactionCount(accountAddress);
-                var rawTransaction = {
-                    "from":accountAddress,
-                    "gasPrice":this.web3.utils.toHex(5_000_000_000),
-                    "gasLimit":this.web3.utils.toHex(1_500_000),
-                    "to":addrURouter,
-                    "value":this.web3.utils.toHex(0),
-                    "data":data.encodeABI(),
-                    "nonce":this.web3.utils.toHex(count)
-                };
-            
-                var transaction = new Tx(rawTransaction, { 'common': BSC_FORK });
-                transaction.sign(Buffer.from(privateKey, 'hex'));
-                
-                var result = await this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'));
-                console.log(result)
-            } else {
-                console.log("NOT ENOGH TOKENS");
+        
+        // bullet--;
+        let weiIn = (new BigNumber(amountIn).times((new BigNumber(10).pow(18)))).toString().split('.')[0];
+        if(new BigNumber(weiIn).isLessThanOrEqualTo(new BigNumber("499000000000000000"))){
+            let amountOutMin = new BigNumber(weiIn)
+            .plus(4000000000000000) // txFee 0.004 BNB
+            .toString(); 
+        
+            var data = this.uRouter.methods.swapExactTokensForTokens(
+                this.web3.utils.toHex(weiIn),
+                this.web3.utils.toHex(amountOutMin),
+                path,
+                accountAddress,
+                this.web3.utils.toHex(Math.round(Date.now()/1000)+60),
+            );
+        
+            var count = await this.web3.eth.getTransactionCount(accountAddress);
+            var rawTransaction = {
+                "from":accountAddress,
+                "gasPrice":this.web3.utils.toHex(5_000_000_000),
+                "gasLimit":this.web3.utils.toHex(1_500_000),
+                "to":addrURouter,
+                "value":this.web3.utils.toHex(0),
+                "data":data.encodeABI(),
+                "nonce":this.web3.utils.toHex(count)
+            };
+        
+            var transaction = new Tx(rawTransaction, { 'common': BSC_FORK });
+            transaction.sign(Buffer.from(privateKey, 'hex'));
+            if(!this.usedPath.has(path) && (bullet > 0))
+            {
+                bullet--;
+                this.usedPath.set(path, "");
+                try {
+                    var result = await this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'));
+                    console.log(result)
+                    this.usedPath.delete(path);
+                } catch (error) {
+                    console.log(error);
+                }
             }
-            
-            // return result;
+        } else {
+            console.log("NOT ENOGH TOKENS");
         }
+        
+        // return result;
+        
         // let result = await this.uRouter.methods.swapExactTokensForTokens(amountIn, amountOutMin, path, msg.sender, deadline).call()
     }
 }

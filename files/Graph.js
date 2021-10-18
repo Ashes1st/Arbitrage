@@ -287,7 +287,7 @@ var Graph = /** @class */ (function () {
     Graph.prototype.getTxFeeForSymbol = function (symbol) {
         var txFeeInEth = 0.001;
         if (symbol == WBNBAddress) {
-            return 0.004;
+            return 0.0041;
         }
         else if (symbol == BUSDAddress) {
             return 2;

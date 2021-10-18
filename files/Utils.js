@@ -120,7 +120,11 @@ module.exports.computeCircleProfitMaximization = function (_a1,_b1,_b2,_c2,_c3,_
     } else {
         return 0;
     }
+    let currentBalance = BigNumber("0.498000000000000001");
     // let profit = (a3.minus(c3.times(a3).div(c3.plus(c2).minus(b2.times(c2).div(b2.plus(b1).minus(a1.times(b1).div(a1.plus(x)))))))).minus(x.minus(BigNumber(3).times(BigNumber(0.0025)).times(x))).minus(txFee);
+    if(x.isGreaterThan(currentBalance)){
+        x = currentBalance;
+    }
     let profit = getAmountOut(getAmountOut(getAmountOut(x, a1, b1), b2, c2), c3, a3).minus(x).minus(txFee);
     // let p = a1.plus(x.times(BigNumber(0.9975))
     

@@ -37,8 +37,8 @@ async function sub(){
             
             return;
         }
-        sub();
         console.error(error);
+        return process.exit(1);
     })
     .on("connected", function(subscriptionId){
         console.log(subscriptionId);
@@ -48,7 +48,7 @@ async function sub(){
     })
     .on("error", function(error){
         console.log(error);
-        sub();
+        return process.exit(1);
     });
 
     // unsubscribes the subscription

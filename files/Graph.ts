@@ -197,7 +197,7 @@ class Graph {
     getTxFeeForSymbol(symbol: string){
         let txFeeInEth = 0.001;
         if(symbol == WBNBAddress){
-            return 0.004;
+            return 0.0041;
         } else if(symbol == BUSDAddress){
             return 2;
         }

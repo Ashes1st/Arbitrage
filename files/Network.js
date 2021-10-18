@@ -61,7 +61,7 @@ var bignumber_js_1 = require("bignumber.js");
 var addrUFactory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 var addrURouter = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 var addrFlashBotUniswapQuery = "0xD89da700352418842bF47c5d9A598B62592c531A";
-var bullet = 1;
+var bullet = 10;
 var BSC_FORK = Common.forCustomChain('mainnet', {
     name: 'Binance Smart Chain Mainnet',
     networkId: 56,
@@ -71,6 +71,7 @@ var BSC_FORK = Common.forCustomChain('mainnet', {
 var Network = /** @class */ (function () {
     function Network(_web3) {
         this.contractsPair = new Map([]);
+        this.usedPath = new Map([]);
         this.web3 = _web3;
         this.uFactory = new this.web3.eth.Contract(IFactory, addrUFactory);
         this.uRouter = new this.web3.eth.Contract(IRouter, addrURouter);
@@ -193,14 +194,13 @@ var Network = /** @class */ (function () {
     };
     Network.prototype.doArbitrage = function (amountIn, path) {
         return __awaiter(this, void 0, void 0, function () {
-            var weiIn, amountOutMin, data, count, rawTransaction, transaction, result;
+            var weiIn, amountOutMin, data, count, rawTransaction, transaction, result, error_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!(bullet == 1)) return [3 /*break*/, 4];
-                        bullet++;
+                        if (!(bullet == 10)) return [3 /*break*/, 7];
                         weiIn = (new bignumber_js_1.BigNumber(amountIn).times((new bignumber_js_1.BigNumber(10).pow(18)))).toString().split('.')[0];
-                        if (!new bignumber_js_1.BigNumber(weiIn).isLessThanOrEqualTo(new bignumber_js_1.BigNumber("498000000000000000"))) return [3 /*break*/, 3];
+                        if (!new bignumber_js_1.BigNumber(weiIn).isLessThanOrEqualTo(new bignumber_js_1.BigNumber("499000000000000000"))) return [3 /*break*/, 6];
                         amountOutMin = new bignumber_js_1.BigNumber(weiIn)
                             .plus(4000000000000000) // txFee 0.004 BNB
                             .toString();
@@ -219,15 +219,26 @@ var Network = /** @class */ (function () {
                         };
                         transaction = new Tx(rawTransaction, { 'common': BSC_FORK });
                         transaction.sign(Buffer.from(config_js_1.privateKey, 'hex'));
-                        return [4 /*yield*/, this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))];
+                        if (!!this.usedPath.has(path)) return [3 /*break*/, 5];
+                        this.usedPath.set(path, "");
+                        _a.label = 2;
                     case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        return [4 /*yield*/, this.web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))];
+                    case 3:
                         result = _a.sent();
                         console.log(result);
-                        return [3 /*break*/, 4];
-                    case 3:
+                        this.usedPath["delete"](path);
+                        return [3 /*break*/, 5];
+                    case 4:
+                        error_1 = _a.sent();
+                        console.log(error_1);
+                        return [3 /*break*/, 5];
+                    case 5: return [3 /*break*/, 7];
+                    case 6:
                         console.log("NOT ENOGH TOKENS");
-                        _a.label = 4;
-                    case 4: return [2 /*return*/];
+                        _a.label = 7;
+                    case 7: return [2 /*return*/];
                 }
             });
         });
